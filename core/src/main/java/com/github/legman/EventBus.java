@@ -18,7 +18,6 @@ package com.github.legman;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.annotations.Beta;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
@@ -109,7 +108,6 @@ import java.util.logging.Logger;
  * @author Cliff Biffle
  * @since 1.0.0
  */
-@Beta
 public class EventBus {
 
   /**

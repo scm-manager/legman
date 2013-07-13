@@ -18,8 +18,6 @@ package com.github.legman;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.annotations.Beta;
-
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 
@@ -30,7 +28,6 @@ import java.util.concurrent.Executor;
  * @author Cliff Biffle
  * @since 1.0.0
  */
-@Beta
 public class AsyncEventBus extends EventBus {
   private final Executor executor;
 

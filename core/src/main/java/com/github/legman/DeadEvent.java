@@ -18,8 +18,6 @@ package com.github.legman;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.annotations.Beta;
-
 /**
  * Wraps an event that was posted, but which had no subscribers and thus could
  * not be delivered.
@@ -30,7 +28,6 @@ import com.google.common.annotations.Beta;
  * @author Cliff Biffle
  * @since 1.0.0
  */
-@Beta
 public class DeadEvent {
 
   private final Object source;
