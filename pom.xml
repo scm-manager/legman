@@ -30,8 +30,8 @@
   </developers>
 
   <scm>
-    <connection>scm:git:https://github.com/sdorra/legman</connection>
-    <developerConnection>scm:git:https://github.com/sdorra/legman</developerConnection>
+    <connection>scm:git:https://github.com/sdorra/legman.git</connection>
+    <developerConnection>scm:git:https://github.com/sdorra/legman.git</developerConnection>
     <url>https://github.com/sdorra/legman</url>
   </scm>
 
