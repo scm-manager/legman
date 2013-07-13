@@ -38,7 +38,7 @@
  *     defined with the event &mdash; such as CustomerChangeEventListener.</li>
  * <li><strong>...with EventBus:</strong> create a method that accepts
  *     CustomerChangeEvent as its sole argument, and mark it with the
- *     {@link com.google.common.eventbus.Subscribe} annotation.</li>
+ *     {@link com.github.legman.Subscribe} annotation.</li>
  * </ul>
  *
  * <p>To register your listener methods with the event producers...
@@ -48,7 +48,7 @@
  *     methods are rarely defined in common interfaces, so in addition to
  *     knowing every possible producer, you must also know its type.</li>
  * <li><strong>...with EventBus:</strong> pass your object to the
- *     {@link com.google.common.eventbus.EventBus#register(Object)} method on an
+ *     {@link com.github.legman.EventBus#register(Object)} method on an
  *     EventBus.  You'll need to
  *     make sure that your object shares an EventBus instance with the event
  *     producers.</li>
@@ -67,7 +67,7 @@
  * <li><strong>...in traditional Java events:</strong> add code to each
  *     event-dispatching method (perhaps using AOP).</li>
  * <li><strong>...with EventBus:</strong> subscribe to {@link
- *     com.google.common.eventbus.DeadEvent}.  The
+ *     com.github.legman.DeadEvent}.  The
  *     EventBus will notify you of any events that were posted but not
  *     delivered.  (Handy for debugging.)</li>
  * </ul>
@@ -87,7 +87,7 @@
  *     dispatch events to each event listener, including error isolation and
  *     (if desired) asynchronicity.</li>
  * <li><strong>...with EventBus:</strong> pass the event object to an EventBus's
- *     {@link com.google.common.eventbus.EventBus#post(Object)} method.</li>
+ *     {@link com.github.legman.EventBus#post(Object)} method.</li>
  * </ul>
  *
  * <h2>Glossary</h2>
@@ -102,7 +102,7 @@
  *     <em>handler methods</em>.</dt>
  * <dt>Handler method</dt><dd>A public method that the EventBus should use to
  *     deliver <em>posted</em> events.  Handler methods are marked by the
- *     {@link com.google.common.eventbus.Subscribe} annotation.</dd>
+ *     {@link com.github.legman.Subscribe} annotation.</dd>
  * <dt>Posting an event</dt><dd>Making the event available to any
  *     <em>listeners</em> through the EventBus.</dt>
  * </dl>
@@ -251,4 +251,4 @@
  * Because handler methods on your listener classes are normal methods, you can
  * simply call them from your test code to simulate the EventBus.
  */
-package com.google.common.eventbus;
+package com.github.legman;

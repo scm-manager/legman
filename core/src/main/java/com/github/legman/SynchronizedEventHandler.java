@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.common.eventbus;
+package com.github.legman;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

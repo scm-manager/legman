@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.common.eventbus;
+package com.github.legman;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
@@ -38,7 +38,7 @@ import javax.annotation.Nullable;
 
 /**
  * A {@link HandlerFindingStrategy} for collecting all event handler methods that are marked with
- * the {@link Subscribe} annotation.
+ * the {@link com.github.legman.Subscribe} annotation.
  *
  * @author Cliff Biffle
  * @author Louis Wasserman
@@ -63,7 +63,7 @@ class AnnotatedHandlerFinder implements HandlerFindingStrategy {
   /**
    * {@inheritDoc}
    *
-   * This implementation finds all methods marked with a {@link Subscribe} annotation.
+   * This implementation finds all methods marked with a {@link com.github.legman.Subscribe} annotation.
    */
   @Override
   public Multimap<Class<?>, EventHandler> findAllHandlers(Object listener) {
@@ -115,7 +115,7 @@ class AnnotatedHandlerFinder implements HandlerFindingStrategy {
     Map<MethodIdentifier, Method> identifiers = Maps.newHashMap();
     for (Class<?> superClazz : supers) {
       for (Method superClazzMethod : superClazz.getMethods()) {
-        if (superClazzMethod.isAnnotationPresent(Subscribe.class)) {
+        if (superClazzMethod.isAnnotationPresent(com.github.legman.Subscribe.class)) {
           Class<?>[] parameterTypes = superClazzMethod.getParameterTypes();
           if (parameterTypes.length != 1) {
             throw new IllegalArgumentException("Method " + superClazzMethod
@@ -149,20 +149,20 @@ class AnnotatedHandlerFinder implements HandlerFindingStrategy {
     if (methodIsDeclaredThreadSafe(method)) {
       wrapper = new EventHandler(listener, method);
     } else {
-      wrapper = new SynchronizedEventHandler(listener, method);
+      wrapper = new com.github.legman.SynchronizedEventHandler(listener, method);
     }
     return wrapper;
   }
 
   /**
    * Checks whether {@code method} is thread-safe, as indicated by the
-   * {@link AllowConcurrentEvents} annotation.
+   * {@link com.github.legman.AllowConcurrentEvents} annotation.
    *
    * @param method  handler method to check.
    * @return {@code true} if {@code handler} is marked as thread-safe,
    *         {@code false} otherwise.
    */
   private static boolean methodIsDeclaredThreadSafe(Method method) {
-    return method.getAnnotation(AllowConcurrentEvents.class) != null;
+    return method.getAnnotation(com.github.legman.AllowConcurrentEvents.class) != null;
   }
 }

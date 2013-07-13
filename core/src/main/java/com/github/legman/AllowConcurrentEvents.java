@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.common.eventbus;
+package com.github.legman;
 
 import com.google.common.annotations.Beta;
 
@@ -24,17 +24,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a method as an event handler, as used by
- * {@link AnnotatedHandlerFinder} and {@link EventBus}.
+ * Marks an event handling method as being thread-safe.  This annotation
+ * indicates that EventBus may invoke the event handler simultaneously from
+ * multiple threads.
  *
- * <p>The type of event will be indicated by the method's first (and only)
- * parameter.  If this annotation is applied to methods with zero parameters,
- * or more than one parameter, the object containing the method will not be able
- * to register for event delivery from the {@link EventBus}.
- *
- * <p>Unless also annotated with @{@link AllowConcurrentEvents}, event handler
- * methods will be invoked serially by each event bus that they are registered
- * with.
+ * <p>This does not mark the method as an event handler, and so should be used
+ * in combination with {@link Subscribe}.
  *
  * @author Cliff Biffle
  * @since 10.0
@@ -42,5 +37,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 @Beta
-public @interface Subscribe {
+public @interface AllowConcurrentEvents {
 }
