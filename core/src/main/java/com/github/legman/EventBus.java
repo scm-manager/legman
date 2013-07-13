@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 The Guava Authors
+ * Copyright (C) 2007 The Guava Authors and Sebastian Sdorra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.github.legman;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.github.legman.internal.ServiceLocator;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
@@ -106,6 +107,7 @@ import java.util.logging.Logger;
  * {@code EventBus}</a>.
  *
  * @author Cliff Biffle
+ * @author Sebastian Sdorra
  * @since 1.0.0
  */
 public class EventBus {
@@ -143,11 +145,12 @@ public class EventBus {
   private final Logger logger;
 
   /**
-   * Strategy for finding handler methods in registered objects.  Currently,
-   * only the {@link AnnotatedHandlerFinder} is supported, but this is
-   * encapsulated for future expansion.
+   * Strategy for finding handler methods in registered objects. The strategy is
+   * loaded with the {@link java.util.ServiceLoader}. The default strategy is the
+   * {@link AnnotatedHandlerFinder}.
    */
-  private final HandlerFindingStrategy finder = new AnnotatedHandlerFinder();
+  private final HandlerFindingStrategy finder =
+      ServiceLocator.locate(HandlerFindingStrategy.class, AnnotatedHandlerFinder.class);
 
   /** queues of events for the current thread to dispatch */
   private final ThreadLocal<Queue<EventWithHandler>> eventsToDispatch =
