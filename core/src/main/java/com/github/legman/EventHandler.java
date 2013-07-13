@@ -36,6 +36,7 @@ import javax.annotation.Nullable;
  * method is registered more than once.
  *
  * @author Cliff Biffle
+ * @since 1.0.0
  */
 class EventHandler {
 

@@ -27,6 +27,7 @@ import java.lang.reflect.Method;
  * {@link EventHandler}.
  *
  * @author Cliff Biffle
+ * @since 1.0.0
  */
 final class SynchronizedEventHandler extends EventHandler {
   /**

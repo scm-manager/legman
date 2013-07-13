@@ -28,7 +28,7 @@ import com.google.common.annotations.Beta;
  * can detect misconfigurations in a system's event distribution.
  *
  * @author Cliff Biffle
- * @since 10.0
+ * @since 1.0.0
  */
 @Beta
 public class DeadEvent {

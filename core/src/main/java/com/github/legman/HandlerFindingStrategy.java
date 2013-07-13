@@ -23,6 +23,7 @@ import com.google.common.collect.Multimap;
  * {@link EventBus}.
  *
  * @author Cliff Biffle
+ * @since 1.0.0
  */
 interface HandlerFindingStrategy {
 

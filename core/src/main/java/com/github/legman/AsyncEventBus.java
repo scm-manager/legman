@@ -28,7 +28,7 @@ import java.util.concurrent.Executor;
  * dispatch events, allowing dispatch to occur asynchronously.
  *
  * @author Cliff Biffle
- * @since 10.0
+ * @since 1.0.0
  */
 @Beta
 public class AsyncEventBus extends EventBus {

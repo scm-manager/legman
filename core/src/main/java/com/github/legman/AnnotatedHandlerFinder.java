@@ -42,6 +42,7 @@ import javax.annotation.Nullable;
  *
  * @author Cliff Biffle
  * @author Louis Wasserman
+ * @since 1.0.0
  */
 class AnnotatedHandlerFinder implements HandlerFindingStrategy {
   /**

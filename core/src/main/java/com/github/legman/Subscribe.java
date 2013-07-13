@@ -37,7 +37,7 @@ import java.lang.annotation.Target;
  * with.
  *
  * @author Cliff Biffle
- * @since 10.0
+ * @since 1.0.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

@@ -107,7 +107,7 @@ import java.util.logging.Logger;
  * {@code EventBus}</a>.
  *
  * @author Cliff Biffle
- * @since 10.0
+ * @since 1.0.0
  */
 @Beta
 public class EventBus {

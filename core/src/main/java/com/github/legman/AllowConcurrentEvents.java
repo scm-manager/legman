@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
  * in combination with {@link Subscribe}.
  *
  * @author Cliff Biffle
- * @since 10.0
+ * @since 1.0.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
