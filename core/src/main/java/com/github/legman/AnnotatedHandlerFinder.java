@@ -129,7 +129,11 @@ public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
           
           MethodIdentifier ident = new MethodIdentifier(superClazzMethod);
           if (!identifiers.containsKey(ident)) {
-            identifiers.put(ident, new EventMetadata(superClazzMethod, subscribe.async()));
+            identifiers.put(ident, new EventMetadata(
+              superClazzMethod,
+              subscribe.allowConcurrentAccess(),
+              subscribe.async()
+            ));
           }
         }
       }
@@ -161,7 +165,7 @@ public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
    */
   private static EventHandler makeHandler(Object listener, EventMetadata metadata) {
     EventHandler wrapper;
-    if (methodIsDeclaredThreadSafe(metadata.method)) {
+    if (metadata.allowConcurrentAccess) {
       wrapper = new EventHandler(listener, metadata.method, metadata.async);
     } else {
       wrapper = new SynchronizedEventHandler(listener, metadata.method, metadata.async);
@@ -169,25 +173,15 @@ public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
     return wrapper;
   }
 
-  /**
-   * Checks whether {@code method} is thread-safe, as indicated by the
-   * {@link com.github.legman.AllowConcurrentEvents} annotation.
-   *
-   * @param method  handler method to check.
-   * @return {@code true} if {@code handler} is marked as thread-safe,
-   *         {@code false} otherwise.
-   */
-  private static boolean methodIsDeclaredThreadSafe(Method method) {
-    return method.getAnnotation(com.github.legman.AllowConcurrentEvents.class) != null;
-  }
-
   private static class EventMetadata {
 
     private Method method;
+    private boolean allowConcurrentAccess;
     private boolean async;
 
-    private EventMetadata(Method method, boolean async) {
+    private EventMetadata(Method method, boolean allowConcurrentAccess,  boolean async) {
       this.method = method;
+      this.allowConcurrentAccess = allowConcurrentAccess;
       this.async = async;
     }
   }

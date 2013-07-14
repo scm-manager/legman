@@ -53,4 +53,13 @@ public @interface Subscribe
    * @return true if the event should be handled asynchronous.
    */
   public boolean async() default true;
+
+  /**
+   * Marks an event handling method as being thread-safe.  This attribute
+   * indicates that EventBus may invoke the event handler simultaneously from
+   * multiple threads.
+   *
+   * @return false if the annotated method is thread-safe
+   */
+  public boolean allowConcurrentAccess() default false;
 }
