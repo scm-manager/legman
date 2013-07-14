@@ -35,13 +35,33 @@ public final class ServiceLocator
    *
    *
    * @param serviceClass
-   * @param defaultServiceClass
+   * @param provider
    * @param <T>
    *
    * @return
    */
-  public static <T> T locate(Class<T> serviceClass,
-    Class<? extends T> defaultServiceClass)
+  public static <T> T locate(Class<T> serviceClass, ServiceProvider<T> provider)
+  {
+    T service = locate(serviceClass);
+
+    if (service == null)
+    {
+      service = provider.create();
+    }
+
+    return service;
+  }
+
+  /**
+   * Method description
+   *
+   *
+   * @param serviceClass
+   * @param <T>
+   *
+   * @return
+   */
+  public static <T> T locate(Class<T> serviceClass)
   {
     T service = null;
     ServiceLoader<T> loader = ServiceLoader.load(serviceClass,
@@ -52,6 +72,24 @@ public final class ServiceLocator
     {
       service = iterator.next();
     }
+
+    return service;
+  }
+
+  /**
+   * Method description
+   *
+   *
+   * @param serviceClass
+   * @param defaultServiceClass
+   * @param <T>
+   *
+   * @return
+   */
+  public static <T> T locate(Class<T> serviceClass,
+    Class<? extends T> defaultServiceClass)
+  {
+    T service = locate(serviceClass);
 
     if (service == null)
     {
@@ -87,5 +125,28 @@ public final class ServiceLocator
     }
 
     return classLoader;
+  }
+
+  //~--- inner interfaces -----------------------------------------------------
+
+  /**
+   * Interface description
+   *
+   *
+   * @param <T>
+   *
+   * @version        Enter version here..., 13/07/14
+   * @author         Enter your name here...    
+   */
+  public static interface ServiceProvider<T>
+  {
+
+    /**
+     * Method description
+     *
+     *
+     * @return
+     */
+    public T create();
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 The Guava Authors
+ * Copyright (C) 2007 The Guava Authors and Sebastian Sdorra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.github.legman;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 
 import java.lang.reflect.InvocationTargetException;
@@ -36,6 +37,7 @@ import javax.annotation.Nullable;
  * method is registered more than once.
  *
  * @author Cliff Biffle
+ * @author Sebastian Sdorra
  * @since 1.0.0
  */
 class EventHandler {
@@ -45,19 +47,23 @@ class EventHandler {
   /** Handler method. */
   private final Method method;
 
+  /** Event should be handled asynchronous. */
+  private final boolean asnyc;
+
   /**
    * Creates a new EventHandler to wrap {@code method} on @{code target}.
    *
    * @param target  object to which the method applies.
    * @param method  handler method.
    */
-  EventHandler(Object target, Method method) {
+  EventHandler(Object target, Method method, boolean asnyc) {
     Preconditions.checkNotNull(target,
         "EventHandler target cannot be null.");
     Preconditions.checkNotNull(method, "EventHandler method cannot be null.");
 
     this.target = target;
     this.method = method;
+    this.asnyc = asnyc;
     method.setAccessible(true);
   }
 
@@ -85,15 +91,10 @@ class EventHandler {
     }
   }
 
-  @Override public String toString() {
-    return "[wrapper " + method + "]";
+  public boolean isAsnyc() {
+    return asnyc;
   }
 
-  @Override public int hashCode() {
-    final int PRIME = 31;
-    return (PRIME + method.hashCode()) * PRIME
-        + System.identityHashCode(target);
-  }
 
   @Override public boolean equals(@Nullable Object obj) {
     if (obj instanceof EventHandler) {
@@ -101,8 +102,23 @@ class EventHandler {
       // Use == so that different equal instances will still receive events.
       // We only guard against the case that the same object is registered
       // multiple times
-      return target == that.target && method.equals(that.method);
+      return target == that.target && method.equals(that.method) && asnyc == that.asnyc;
     }
     return false;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(target, method, asnyc);
+  }
+
+
+  @Override
+  public String toString() {
+    return Objects.toStringHelper(this)
+            .addValue(target)
+            .addValue(method)
+            .addValue(asnyc)
+            .toString();
   }
 }

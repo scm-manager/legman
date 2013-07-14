@@ -26,16 +26,21 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
@@ -74,7 +79,7 @@ import java.util.logging.Logger;
  * <p>When {@code post} is called, all registered handlers for an event are run
  * in sequence, so handlers should be reasonably quick.  If an event may trigger
  * an extended process (such as a database load), spawn a thread or queue it for
- * later.  (For a convenient way to do this, use an {@link AsyncEventBus}.)
+ * later.  (For a convenient way to do this, use an Async{@link EventBus}.)
  *
  * <h2>Handler Methods</h2>
  * Event handler methods must accept only one argument: the event.
@@ -168,6 +173,13 @@ public class EventBus {
     }
   };
 
+  /** executor for handling asynchronous events */
+  private Executor executor;
+
+  /** the queue of asynchronous events is shared across all threads */
+  private final ConcurrentLinkedQueue<EventWithHandler> asyncEventsToDispatch =
+          new ConcurrentLinkedQueue<EventWithHandler>();
+
   /**
    * Creates a new EventBus named "default".
    */
@@ -183,6 +195,18 @@ public class EventBus {
    */
   public EventBus(String identifier) {
     logger = Logger.getLogger(EventBus.class.getName() + "." + checkNotNull(identifier));
+
+    executor = ServiceLocator.locate( Executor.class, new ServiceLocator.ServiceProvider<Executor>() {
+      @Override
+      public Executor create() {
+        return Executors.newFixedThreadPool(4);
+      }
+    });
+
+    ExecutorDecoratorFactory decorator = ServiceLocator.locate(ExecutorDecoratorFactory.class);
+    if (decorator != null){
+      executor = decorator.decorate(executor);
+    }
   }
 
   /**
@@ -265,23 +289,46 @@ public class EventBus {
       post(new DeadEvent(this, event));
     }
 
-    dispatchQueuedEvents();
+    dispatchSynchronousQueuedEvents();
+    dispatchAsynchronousQueuedEvents();
   }
 
   /**
    * Queue the {@code event} for dispatch during
-   * {@link #dispatchQueuedEvents()}. Events are queued in-order of occurrence
-   * so they can be dispatched in the same order.
+   * {@link #dispatchSynchronousQueuedEvents()} and {@linl #dispatchAsynchronousQueuedEvents}.
+   * Events are queued in-order of occurrence so they can be dispatched in the same order.
    */
   void enqueueEvent(Object event, EventHandler handler) {
-    eventsToDispatch.get().offer(new EventWithHandler(event, handler));
+    if ( handler.isAsnyc() ){
+      asyncEventsToDispatch.offer(new EventWithHandler(event, handler));
+    } else {
+      eventsToDispatch.get().offer(new EventWithHandler(event, handler));
+    }
+  }
+
+
+
+  /**
+   * Dispatch {@code events} in the order they were posted, regardless of
+   * the posting thread.
+   */
+  @SuppressWarnings("deprecation") // only deprecated for external subclasses
+  protected void dispatchAsynchronousQueuedEvents() {
+    while (true) {
+      EventWithHandler eventWithHandler = asyncEventsToDispatch.poll();
+      if (eventWithHandler == null) {
+        break;
+      }
+
+      dispatch(eventWithHandler.event, eventWithHandler.handler);
+    }
   }
 
   /**
    * Drain the queue of events to be dispatched. As the queue is being drained,
    * new events may be posted to the end of the queue.
    */
-  void dispatchQueuedEvents() {
+  void dispatchSynchronousQueuedEvents() {
     // don't dispatch if we're already dispatching, that would allow reentrancy
     // and out-of-order events. Instead, leave the events to be dispatched
     // after the in-progress dispatch is complete.
@@ -310,12 +357,25 @@ public class EventBus {
    * @param event  event to dispatch.
    * @param wrapper  wrapper that will call the handler.
    */
-  void dispatch(Object event, EventHandler wrapper) {
+  void dispatch(final Object event, final EventHandler wrapper) {
+    if ( wrapper.isAsnyc() ){
+      executor.execute(new Runnable() {
+        @Override
+        public void run() {
+          dispatchSynchronous(event, wrapper);
+        }
+      });
+    } else {
+      dispatchSynchronous(event, wrapper);
+    }
+  }
+
+  void dispatchSynchronous(Object event, EventHandler wrapper){
     try {
       wrapper.handleEvent(event);
     } catch (InvocationTargetException e) {
       logger.log(Level.SEVERE,
-          "Could not dispatch event: " + event + " to handler " + wrapper, e);
+              "Could not dispatch event: " + event + " to handler " + wrapper, e);
     }
   }
 

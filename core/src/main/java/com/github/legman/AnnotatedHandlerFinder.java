@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 The Guava Authors
+ * Copyright (C) 2007 The Guava Authors and Sebastian Sdorra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
@@ -38,48 +39,49 @@ import javax.annotation.Nullable;
 
 /**
  * A {@link HandlerFindingStrategy} for collecting all event handler methods that are marked with
- * the {@link com.github.legman.Subscribe} annotation.
+ * the {@link Subscribe} annotation.
  *
  * @author Cliff Biffle
  * @author Louis Wasserman
+ * @author Sebastian Sdorra
  * @since 1.0.0
  */
-class AnnotatedHandlerFinder implements HandlerFindingStrategy {
+public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
   /**
    * A thread-safe cache that contains the mapping from each class to all methods in that class and
    * all super-classes, that are annotated with {@code @Subscribe}. The cache is shared across all
    * instances of this class; this greatly improves performance if multiple EventBus instances are
    * created and objects of the same class are registered on all of them.
    */
-  private static final LoadingCache<Class<?>, ImmutableList<Method>> handlerMethodsCache =
+  private static final LoadingCache<Class<?>, ImmutableList<EventMetadata>> handlerMethodsCache =
       CacheBuilder.newBuilder()
           .weakKeys()
-          .build(new CacheLoader<Class<?>, ImmutableList<Method>>() {
+          .build(new CacheLoader<Class<?>, ImmutableList<EventMetadata>>() {
             @Override
-            public ImmutableList<Method> load(Class<?> concreteClass) throws Exception {
-              return getAnnotatedMethodsInternal(concreteClass);
+            public ImmutableList<EventMetadata> load(Class<?> concreteClass) throws Exception {
+              return getMetadataInternal(concreteClass);
             }
           });
 
   /**
    * {@inheritDoc}
    *
-   * This implementation finds all methods marked with a {@link com.github.legman.Subscribe} annotation.
+   * This implementation finds all methods marked with a {@link Subscribe} annotation.
    */
   @Override
   public Multimap<Class<?>, EventHandler> findAllHandlers(Object listener) {
     Multimap<Class<?>, EventHandler> methodsInListener = HashMultimap.create();
     Class<?> clazz = listener.getClass();
-    for (Method method : getAnnotatedMethods(clazz)) {
-      Class<?>[] parameterTypes = method.getParameterTypes();
+    for (EventMetadata metadata : getEventMetadata(clazz)) {
+      Class<?>[] parameterTypes = metadata.method.getParameterTypes();
       Class<?> eventType = parameterTypes[0];
-      EventHandler handler = makeHandler(listener, method);
+      EventHandler handler = makeHandler(listener, metadata);
       methodsInListener.put(eventType, handler);
     }
     return methodsInListener;
   }
 
-  private static ImmutableList<Method> getAnnotatedMethods(Class<?> clazz) {
+  private static ImmutableList<EventMetadata> getEventMetadata(Class<?> clazz) {
     try {
       return handlerMethodsCache.getUnchecked(clazz);
     } catch (UncheckedExecutionException e) {
@@ -111,12 +113,13 @@ class AnnotatedHandlerFinder implements HandlerFindingStrategy {
     }
   }
 
-  private static ImmutableList<Method> getAnnotatedMethodsInternal(Class<?> clazz) {
+  private static ImmutableList<EventMetadata> getMetadataInternal(Class<?> clazz) {
     Set<? extends Class<?>> supers = TypeToken.of(clazz).getTypes().rawTypes();
-    Map<MethodIdentifier, Method> identifiers = Maps.newHashMap();
+    Map<MethodIdentifier, EventMetadata> identifiers = Maps.newHashMap();
     for (Class<?> superClazz : supers) {
       for (Method superClazzMethod : superClazz.getMethods()) {
-        if (superClazzMethod.isAnnotationPresent(com.github.legman.Subscribe.class)) {
+        Subscribe subscribe = getSubscribeAnnotation(superClazzMethod);
+        if (subscribe != null) {
           Class<?>[] parameterTypes = superClazzMethod.getParameterTypes();
           if (parameterTypes.length != 1) {
             throw new IllegalArgumentException("Method " + superClazzMethod
@@ -126,12 +129,23 @@ class AnnotatedHandlerFinder implements HandlerFindingStrategy {
           
           MethodIdentifier ident = new MethodIdentifier(superClazzMethod);
           if (!identifiers.containsKey(ident)) {
-            identifiers.put(ident, superClazzMethod);
+            identifiers.put(ident, new EventMetadata(superClazzMethod, subscribe.async()));
           }
         }
       }
     }
     return ImmutableList.copyOf(identifiers.values());
+  }
+
+  private static Subscribe getSubscribeAnnotation(Method method)
+  {
+    Subscribe subscribe = null;
+    for (Annotation annotation : method.getDeclaredAnnotations()){
+      if (annotation instanceof Subscribe){
+        subscribe = (Subscribe) annotation;
+      }
+    }
+    return subscribe;
   }
 
   /**
@@ -141,16 +155,16 @@ class AnnotatedHandlerFinder implements HandlerFindingStrategy {
    * {@code method}.
    *
    * @param listener  object bearing the event handler method.
-   * @param method  the event handler method to wrap in an EventHandler.
+   * @param metadata  the event metadata to wrap in an EventHandler.
    * @return an EventHandler that will call {@code method} on {@code listener}
    *         when invoked.
    */
-  private static EventHandler makeHandler(Object listener, Method method) {
+  private static EventHandler makeHandler(Object listener, EventMetadata metadata) {
     EventHandler wrapper;
-    if (methodIsDeclaredThreadSafe(method)) {
-      wrapper = new EventHandler(listener, method);
+    if (methodIsDeclaredThreadSafe(metadata.method)) {
+      wrapper = new EventHandler(listener, metadata.method, metadata.async);
     } else {
-      wrapper = new com.github.legman.SynchronizedEventHandler(listener, method);
+      wrapper = new SynchronizedEventHandler(listener, metadata.method, metadata.async);
     }
     return wrapper;
   }
@@ -165,5 +179,16 @@ class AnnotatedHandlerFinder implements HandlerFindingStrategy {
    */
   private static boolean methodIsDeclaredThreadSafe(Method method) {
     return method.getAnnotation(com.github.legman.AllowConcurrentEvents.class) != null;
+  }
+
+  private static class EventMetadata {
+
+    private Method method;
+    private boolean async;
+
+    private EventMetadata(Method method, boolean async) {
+      this.method = method;
+      this.async = async;
+    }
   }
 }

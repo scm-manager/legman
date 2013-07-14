@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 The Guava Authors
+ * Copyright (C) 2007 The Guava Authors and Sebastian Sdorra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
+
+
 package com.github.legman;
+
+//~--- JDK imports ------------------------------------------------------------
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -35,9 +39,18 @@ import java.lang.annotation.Target;
  * with.
  *
  * @author Cliff Biffle
+ * @author Sebastian Sdorra
  * @since 1.0.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Subscribe {
+public @interface Subscribe
+{
+  /**
+   * Returns true if the event should be handled asynchronous.
+   * The default is asynchronous.
+   *
+   * @return true if the event should be handled asynchronous.
+   */
+  public boolean async() default true;
 }

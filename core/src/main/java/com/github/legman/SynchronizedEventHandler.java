@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 The Guava Authors
+ * Copyright (C) 2007 The Guava Authors and Sebastian Sdorra
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.lang.reflect.Method;
  * {@link EventHandler}.
  *
  * @author Cliff Biffle
+ * @author Sebastian Sdorra
  * @since 1.0.0
  */
 final class SynchronizedEventHandler extends EventHandler {
@@ -37,8 +38,8 @@ final class SynchronizedEventHandler extends EventHandler {
    * @param target  object to which the method applies.
    * @param method  handler method.
    */
-  public SynchronizedEventHandler(Object target, Method method) {
-    super(target, method);
+  public SynchronizedEventHandler(Object target, Method method, boolean async) {
+    super(target, method, async);
   }
 
   @Override
