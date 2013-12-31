@@ -51,6 +51,7 @@
 
   <modules>
     <module>core</module>
+    <module>support</module>
   </modules>
 
   <dependencies>
