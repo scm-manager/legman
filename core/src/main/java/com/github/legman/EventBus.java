@@ -416,10 +416,16 @@ public class EventBus {
     try {
       wrapper.handleEvent(event);
     } catch (InvocationTargetException e) {
-      StringBuilder msg = new StringBuilder(identifier);
-      msg.append(" - could not dispatch event: ").append(event);
-      msg.append(" to handler ").append(wrapper);
-      logger.error(msg.toString(), e);
+      if ( wrapper.isAsnyc() ){
+        StringBuilder msg = new StringBuilder(identifier);
+        msg.append(" - could not dispatch event: ").append(event);
+        msg.append(" to handler ").append(wrapper);
+        logger.error(msg.toString(), e);
+      } else {
+        Throwable cause = e.getCause();
+        Throwables.propagateIfPossible(cause);
+        throw Throwables.propagate(cause);
+      }
     }
   }
 

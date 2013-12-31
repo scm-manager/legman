@@ -16,6 +16,8 @@
 
 package com.github.legman;
 
+import java.io.IOException;
+import javax.annotation.Syntax;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -83,6 +85,51 @@ public class EventBusTest
     bus.register(deadEventListener);
     bus.post(new Integer(12));
     assertNotNull(deadEventListener.event);
+  }
+  
+  @Test(expected = IllegalStateException.class)
+  public void testRuntimeException(){
+    EventBus bus = new EventBus();
+    bus.register(new RuntimeExceptionListener());
+    bus.post("event");
+  }
+  
+  @Test(expected = RuntimeException.class)
+  public void testCheckedException(){
+    EventBus bus = new EventBus();
+    bus.register(new CheckedExceptionListener());
+    bus.post("event");
+  }
+  
+  @Test
+  public void testAsyncException(){
+    EventBus bus = new EventBus();
+    bus.register(new AsyncCheckedExceptionListener());
+    bus.post("event");    
+  }
+  
+  private class AsyncCheckedExceptionListener {
+    
+    @Subscribe
+    public void handleEvent(String event) throws IOException{
+      throw new IOException();
+    }
+  }
+  
+  private class RuntimeExceptionListener {
+
+    @Subscribe(async = false)
+    public void handleEvent(String event){
+      throw new IllegalStateException();
+    }
+  }
+  
+  private class CheckedExceptionListener {
+    
+    @Subscribe(async = false)
+    public void handleEvent(String event) throws IOException{
+      throw new IOException();
+    }
   }
   
   private class DeadEventListener {
