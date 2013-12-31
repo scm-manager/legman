@@ -73,6 +73,28 @@ public class EventBusTest
     Thread.sleep(500l);
     assertEquals("event", listener.event);
   }
+  
+  @Test
+  public void testDeadEvent(){
+    EventBus bus = new EventBus();
+    SyncListener listener = new SyncListener();
+    bus.register(listener);
+    DeadEventListener deadEventListener = new DeadEventListener();
+    bus.register(deadEventListener);
+    bus.post(new Integer(12));
+    assertNotNull(deadEventListener.event);
+  }
+  
+  private class DeadEventListener {
+    
+    private DeadEvent event;
+    
+    @Subscribe(async = false)
+    public void handleEvent(DeadEvent event){
+      this.event = event;
+    }
+    
+  }
 
   private class AsyncListener {
     
