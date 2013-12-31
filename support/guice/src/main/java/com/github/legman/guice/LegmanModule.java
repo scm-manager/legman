@@ -29,6 +29,9 @@ import com.google.inject.spi.InjectionListener;
 import com.google.inject.spi.TypeEncounter;
 import com.google.inject.spi.TypeListener;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author Sebastian Sdorra
@@ -36,6 +39,12 @@ import com.google.inject.spi.TypeListener;
  */
 public class LegmanModule extends AbstractModule
 {
+  
+  /**
+   * the logger for LegmanModule
+   */
+  private static final Logger logger = LoggerFactory.getLogger(
+    LegmanModule.class);
   
   public LegmanModule(EventBus eventBus)
   {
@@ -57,10 +66,16 @@ public class LegmanModule extends AbstractModule
           @Override
           public void afterInjection(I injectee)
           {
+            if ( logger.isTraceEnabled() )
+            {
+              Class<?> clazz = injectee.getClass();
+              logger.trace("register subscriber {}", clazz);
+            }
             eventBus.register(injectee);
           }
         });
       }
+      
     });
   }
   

@@ -22,6 +22,9 @@ import com.github.legman.ExecutorDecoratorFactory;
 import java.util.concurrent.Executor;
 import org.apache.shiro.concurrent.SubjectAwareExecutor;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  *
  * @author Sebastian Sdorra
@@ -29,10 +32,21 @@ import org.apache.shiro.concurrent.SubjectAwareExecutor;
  */
 public class ShiroExecutorDecoratorFactory implements ExecutorDecoratorFactory
 {
+  
+  /**
+   * the logger for ShiroExecutorDecoratorFactory
+   */
+  private static final Logger logger = LoggerFactory.getLogger(
+    ShiroExecutorDecoratorFactory.class);
 
   @Override
   public Executor decorate(Executor executor)
   {
+    logger.debug(
+      "register {} as {} for legman", 
+      ShiroExecutorDecoratorFactory.class, 
+      ExecutorDecoratorFactory.class
+    );
     return new SubjectAwareExecutor(executor);
   }
  
