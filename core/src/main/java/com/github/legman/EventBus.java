@@ -184,11 +184,14 @@ public class EventBus {
   private final ConcurrentLinkedQueue<EventWithHandler> asyncEventsToDispatch =
           new ConcurrentLinkedQueue<EventWithHandler>();
 
+  /** name of the default event bus */
+  static final String DEFAULT_NAME = "default";
+  
   /**
    * Creates a new EventBus named "default".
    */
   public EventBus() {
-    this("default");
+    this(DEFAULT_NAME);
   }
 
   /**
