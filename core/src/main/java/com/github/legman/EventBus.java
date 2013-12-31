@@ -30,6 +30,9 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -41,8 +44,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 
 /**
  * Dispatches events to listeners, and provides ways for listeners to register
@@ -145,7 +147,7 @@ public class EventBus {
    * Logger for event dispatch failures.  Named by the fully-qualified name of
    * this class, followed by the identifier provided at construction.
    */
-  private final Logger logger;
+  private static final Logger logger = LoggerFactory.getLogger(EventBus.class);
 
   /**
    * Strategy for finding handler methods in registered objects. The strategy is
@@ -170,6 +172,9 @@ public class EventBus {
       return false;
     }
   };
+  
+  /** identifier of the event bus */
+  private String identifier;
 
   /** executor for handling asynchronous events */
   private Executor executor;
@@ -192,7 +197,7 @@ public class EventBus {
    *                    be a valid Java identifier.
    */
   public EventBus(String identifier) {
-    logger = Logger.getLogger(EventBus.class.getName() + "." + checkNotNull(identifier));
+    this.identifier = identifier;
 
     executor = ServiceLocator.locate( Executor.class, new ServiceLocator.ServiceProvider<Executor>() {
       @Override
@@ -205,6 +210,16 @@ public class EventBus {
     if (decorator != null){
       executor = decorator.decorate(executor);
     }
+  }
+
+  /**
+   * Returns the identifier of the EventBus.
+   * 
+   * @return identifier of EventBus.
+   */
+  public String getIdentifier()
+  {
+    return identifier;
   }
 
   /**
@@ -252,6 +267,11 @@ public class EventBus {
     }
   }
   
+  /**
+   * Remove an registered {@link EventHandler} from the {@link EventBus}.
+   * 
+   * @param eventHandler event handler which should be removed
+   */
   void removeEventHandler(EventHandler eventHandler){
     Entry<Class<?>,EventHandler> entry = null;
     
@@ -396,8 +416,10 @@ public class EventBus {
     try {
       wrapper.handleEvent(event);
     } catch (InvocationTargetException e) {
-      logger.log(Level.SEVERE,
-              "Could not dispatch event: " + event + " to handler " + wrapper, e);
+      StringBuilder msg = new StringBuilder(identifier);
+      msg.append(" - could not dispatch event: ").append(event);
+      msg.append(" to handler ").append(wrapper);
+      logger.error(msg.toString(), e);
     }
   }
 
