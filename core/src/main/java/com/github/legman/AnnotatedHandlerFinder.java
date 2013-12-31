@@ -169,9 +169,21 @@ public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
   private static EventHandler makeHandler(EventBus eventBus, Object listener, EventMetadata metadata) {
     EventHandler wrapper;
     if (metadata.allowConcurrentAccess) {
-      wrapper = new EventHandler(eventBus, listener, metadata.method,  metadata.referenceType, metadata.async);
+      wrapper = new EventHandler(
+        eventBus, 
+        listener, 
+        metadata.method,  
+        metadata.referenceType, 
+        metadata.async
+      );
     } else {
-      wrapper = new SynchronizedEventHandler(eventBus, listener, metadata.method, metadata.referenceType, metadata.async);
+      wrapper = new SynchronizedEventHandler(
+        eventBus, 
+        listener, 
+        metadata.method, 
+        metadata.referenceType, 
+        metadata.async
+      );
     }
     return wrapper;
   }
