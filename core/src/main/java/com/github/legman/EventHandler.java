@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
+import java.lang.ref.WeakReference;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -44,11 +45,17 @@ class EventHandler {
 
   /** Object sporting the handler method. */
   private final Object target;
+  
+  private final WeakReference<Object> targetReference;
+  
   /** Handler method. */
   private final Method method;
 
   /** Event should be handled asynchronous. */
   private final boolean asnyc;
+  
+  
+  private final EventBus eventBus;
 
   /**
    * Creates a new EventHandler to wrap {@code method} on @{code target}.
@@ -56,12 +63,19 @@ class EventHandler {
    * @param target  object to which the method applies.
    * @param method  handler method.
    */
-  EventHandler(Object target, Method method, boolean asnyc) {
+  EventHandler(EventBus eventBus, Object target, Method method, ReferenceType referenceType, boolean asnyc) {
+    Preconditions.checkNotNull(eventBus, "eventbus cannot be null.");
     Preconditions.checkNotNull(target,
         "EventHandler target cannot be null.");
     Preconditions.checkNotNull(method, "EventHandler method cannot be null.");
-
-    this.target = target;
+    this.eventBus = eventBus;
+    if ( referenceType == ReferenceType.STRONG ){
+      this.target = target;
+      this.targetReference = null;
+    } else {
+      this.target = null;
+      this.targetReference = new WeakReference<Object>(target);
+    }
     this.method = method;
     this.asnyc = asnyc;
     method.setAccessible(true);
@@ -77,19 +91,28 @@ class EventHandler {
    */
   public void handleEvent(Object event) throws InvocationTargetException {
     checkNotNull(event);
-    try {
-      method.invoke(target, new Object[] { event });
-    } catch (IllegalArgumentException e) {
-      throw new Error("Method rejected target/argument: " + event, e);
-    } catch (IllegalAccessException e) {
-      throw new Error("Method became inaccessible: " + event, e);
-    } catch (InvocationTargetException e) {
-      if (e.getCause() instanceof Error) {
-        throw (Error) e.getCause();
+    Object t = target;
+    if (t == null){
+      t = targetReference.get();
+    }
+    if ( t != null ){
+      try {
+        method.invoke(t, new Object[] { event });
+      } catch (IllegalArgumentException e) {
+        throw new Error("Method rejected target/argument: " + event, e);
+      } catch (IllegalAccessException e) {
+        throw new Error("Method became inaccessible: " + event, e);
+      } catch (InvocationTargetException e) {
+        if (e.getCause() instanceof Error) {
+          throw (Error) e.getCause();
+        }
+        throw e;
       }
-      throw e;
+    } else {
+      eventBus.removeEventHandler(this);
     }
   }
+    
 
   public boolean isAsnyc() {
     return asnyc;
@@ -102,14 +125,14 @@ class EventHandler {
       // Use == so that different equal instances will still receive events.
       // We only guard against the case that the same object is registered
       // multiple times
-      return target == that.target && method.equals(that.method) && asnyc == that.asnyc;
+      return target == that.target && targetReference == that.targetReference && method.equals(that.method) && asnyc == that.asnyc;
     }
     return false;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(target, method, asnyc);
+    return Objects.hashCode(target, targetReference, method, asnyc);
   }
 
 

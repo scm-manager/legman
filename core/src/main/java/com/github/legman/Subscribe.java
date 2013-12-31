@@ -58,4 +58,6 @@ public @interface Subscribe
    * @return false if the annotated method is thread-safe
    */
   public boolean allowConcurrentAccess() default false;
+  
+  public ReferenceType referenceType() default ReferenceType.WEAK;
 }

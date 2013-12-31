@@ -38,6 +38,6 @@ interface HandlerFindingStrategy {
    * @throws IllegalArgumentException if {@code source} is not appropriate for
    *         this strategy (in ways that this interface does not define).
    */
-  Multimap<Class<?>, EventHandler> findAllHandlers(Object source);
+  Multimap<Class<?>, EventHandler> findAllHandlers(EventBus eventBus, Object source);
 
 }

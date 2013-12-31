@@ -219,7 +219,7 @@ public class EventBus {
    */
   public void register(Object object) {
     Multimap<Class<?>, EventHandler> methodsInListener =
-        finder.findAllHandlers(object);
+        finder.findAllHandlers(this, object);
     handlersByTypeLock.writeLock().lock();
     try {
       handlersByType.putAll(methodsInListener);
@@ -235,7 +235,7 @@ public class EventBus {
    * @throws IllegalArgumentException if the object was not previously registered.
    */
   public void unregister(Object object) {
-    Multimap<Class<?>, EventHandler> methodsInListener = finder.findAllHandlers(object);
+    Multimap<Class<?>, EventHandler> methodsInListener = finder.findAllHandlers(this, object);
     for (Entry<Class<?>, Collection<EventHandler>> entry : methodsInListener.asMap().entrySet()) {
       Class<?> eventType = entry.getKey();
       Collection<EventHandler> eventMethodsInListener = entry.getValue();
@@ -252,6 +252,10 @@ public class EventBus {
         handlersByTypeLock.writeLock().unlock();
       }
     }
+  }
+  
+  void removeEventHandler(EventHandler eventHandler){
+    System.out.println("remove eventhandler");
   }
 
   /**

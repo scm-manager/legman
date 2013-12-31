@@ -38,8 +38,8 @@ final class SynchronizedEventHandler extends EventHandler {
    * @param target  object to which the method applies.
    * @param method  handler method.
    */
-  public SynchronizedEventHandler(Object target, Method method, boolean async) {
-    super(target, method, async);
+  public SynchronizedEventHandler(EventBus eventBus, Object target, Method method, ReferenceType referenceType, boolean async) {
+    super(eventBus, target, method, referenceType, async);
   }
 
   @Override

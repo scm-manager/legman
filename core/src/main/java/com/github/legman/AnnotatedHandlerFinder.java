@@ -69,13 +69,13 @@ public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
    * This implementation finds all methods marked with a {@link Subscribe} annotation.
    */
   @Override
-  public Multimap<Class<?>, EventHandler> findAllHandlers(Object listener) {
+  public Multimap<Class<?>, EventHandler> findAllHandlers(EventBus eventBus, Object listener) {
     Multimap<Class<?>, EventHandler> methodsInListener = HashMultimap.create();
     Class<?> clazz = listener.getClass();
     for (EventMetadata metadata : getEventMetadata(clazz)) {
       Class<?>[] parameterTypes = metadata.method.getParameterTypes();
       Class<?> eventType = parameterTypes[0];
-      EventHandler handler = makeHandler(listener, metadata);
+      EventHandler handler = makeHandler(eventBus, listener, metadata);
       methodsInListener.put(eventType, handler);
     }
     return methodsInListener;
@@ -129,11 +129,14 @@ public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
           
           MethodIdentifier ident = new MethodIdentifier(superClazzMethod);
           if (!identifiers.containsKey(ident)) {
-            identifiers.put(ident, new EventMetadata(
-              superClazzMethod,
-              subscribe.allowConcurrentAccess(),
-              subscribe.async()
-            ));
+            identifiers.put(ident, 
+              new EventMetadata(
+                superClazzMethod,
+                subscribe.referenceType(),
+                subscribe.allowConcurrentAccess(),
+                subscribe.async()
+              )
+            );
           }
         }
       }
@@ -163,12 +166,12 @@ public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
    * @return an EventHandler that will call {@code method} on {@code listener}
    *         when invoked.
    */
-  private static EventHandler makeHandler(Object listener, EventMetadata metadata) {
+  private static EventHandler makeHandler(EventBus eventBus, Object listener, EventMetadata metadata) {
     EventHandler wrapper;
     if (metadata.allowConcurrentAccess) {
-      wrapper = new EventHandler(listener, metadata.method, metadata.async);
+      wrapper = new EventHandler(eventBus, listener, metadata.method,  metadata.referenceType, metadata.async);
     } else {
-      wrapper = new SynchronizedEventHandler(listener, metadata.method, metadata.async);
+      wrapper = new SynchronizedEventHandler(eventBus, listener, metadata.method, metadata.referenceType, metadata.async);
     }
     return wrapper;
   }
@@ -176,11 +179,13 @@ public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
   private static class EventMetadata {
 
     private Method method;
+    private ReferenceType referenceType;
     private boolean allowConcurrentAccess;
     private boolean async;
 
-    private EventMetadata(Method method, boolean allowConcurrentAccess,  boolean async) {
+    private EventMetadata(Method method, ReferenceType referenceType, boolean allowConcurrentAccess,  boolean async) {
       this.method = method;
+      this.referenceType = referenceType;
       this.allowConcurrentAccess = allowConcurrentAccess;
       this.async = async;
     }
