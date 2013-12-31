@@ -139,6 +139,7 @@ public class EventBus {
    * <p>This SetMultimap is NOT safe for concurrent use; all access should be
    * made after acquiring a read or write lock via {@link #handlersByTypeLock}.
    */
+  @VisibleForTesting
   final SetMultimap<Class<?>, EventHandler> handlersByType =
       HashMultimap.create();
   private final ReadWriteLock handlersByTypeLock = new ReentrantReadWriteLock();
