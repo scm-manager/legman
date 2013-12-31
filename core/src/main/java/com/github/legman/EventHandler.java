@@ -60,8 +60,11 @@ class EventHandler {
   /**
    * Creates a new EventHandler to wrap {@code method} on @{code target}.
    *
-   * @param target  object to which the method applies.
-   * @param method  handler method.
+   * @param eventBus bus which handles the event
+   * @param target object to which the method applies.
+   * @param method handler method.
+   * @param referenceType type of the reference
+   * @param async true if the event should be handled async
    */
   EventHandler(EventBus eventBus, Object target, Method method, ReferenceType referenceType, boolean asnyc) {
     Preconditions.checkNotNull(eventBus, "eventbus cannot be null.");
@@ -114,6 +117,11 @@ class EventHandler {
   }
     
 
+  /**
+   * Returns true if the event should be handled asynchronous.
+   * 
+   * @return true if the event is handled async.
+   */
   public boolean isAsnyc() {
     return asnyc;
   }

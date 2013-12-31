@@ -59,5 +59,11 @@ public @interface Subscribe
    */
   public boolean allowConcurrentAccess() default false;
   
+  /**
+   * By default all references to message listeners are weak to eliminate the 
+   * risk of a memory leak. It is possible to use strong references.
+   * 
+   * @return the reference type
+   */
   public ReferenceType referenceType() default ReferenceType.WEAK;
 }

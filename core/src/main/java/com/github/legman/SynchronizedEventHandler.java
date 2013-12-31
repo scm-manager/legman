@@ -35,8 +35,11 @@ final class SynchronizedEventHandler extends EventHandler {
    * Creates a new SynchronizedEventHandler to wrap {@code method} on
    * {@code target}.
    *
-   * @param target  object to which the method applies.
-   * @param method  handler method.
+   * @param eventBus bus which handles the event
+   * @param target object to which the method applies.
+   * @param method handler method.
+   * @param referenceType type of the reference
+   * @param async true if the event should be handled async
    */
   public SynchronizedEventHandler(EventBus eventBus, Object target, Method method, ReferenceType referenceType, boolean async) {
     super(eventBus, target, method, referenceType, async);

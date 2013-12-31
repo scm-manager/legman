@@ -20,6 +20,7 @@ package com.github.legman;
 /**
  *
  * @author Sebastian Sdorra
+ * @since 1.0.0
  */
 public enum ReferenceType
 {
