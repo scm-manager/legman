@@ -26,12 +26,10 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
 import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 
-import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.LinkedList;
