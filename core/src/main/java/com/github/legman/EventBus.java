@@ -139,7 +139,7 @@ public class EventBus {
    * <p>This SetMultimap is NOT safe for concurrent use; all access should be
    * made after acquiring a read or write lock via {@link #handlersByTypeLock}.
    */
-  private final SetMultimap<Class<?>, EventHandler> handlersByType =
+  final SetMultimap<Class<?>, EventHandler> handlersByType =
       HashMultimap.create();
   private final ReadWriteLock handlersByTypeLock = new ReentrantReadWriteLock();
 
@@ -255,7 +255,27 @@ public class EventBus {
   }
   
   void removeEventHandler(EventHandler eventHandler){
-    System.out.println("remove eventhandler");
+    Entry<Class<?>,EventHandler> entry = null;
+    
+    for ( Entry<Class<?>,EventHandler> e :  handlersByType.entries() ){
+      if ( e.getValue() == eventHandler ){
+        entry = e;
+        break;
+      }
+    }
+    
+    if ( entry != null ){
+      handlersByTypeLock.writeLock().lock();
+      try {
+        if (!handlersByType.remove(entry.getKey(), eventHandler)){
+          throw new IllegalArgumentException("event handler could not be removed");
+        }
+      } finally {
+        handlersByTypeLock.writeLock().unlock();
+      }
+    } else {
+      throw new IllegalArgumentException("event handler not found");
+    }
   }
 
   /**
