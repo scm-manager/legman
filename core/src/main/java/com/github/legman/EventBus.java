@@ -217,7 +217,7 @@ public class EventBus {
    * 
    * @return identifier of EventBus.
    */
-  public String getIdentifier()
+  String getIdentifier()
   {
     return identifier;
   }
