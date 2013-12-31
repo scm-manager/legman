@@ -25,8 +25,6 @@ import static org.junit.Assert.*;
  *
  * @author Sebastian Sdorra
  */
-
-
 public class EventBusTest
 {
   
@@ -110,6 +108,8 @@ public class EventBusTest
     bus.post("event");    
   }
   
+  /** Listener classes */
+  
   private class AsyncCheckedExceptionListener {
     
     @Subscribe
@@ -142,7 +142,6 @@ public class EventBusTest
     public void handleEvent(DeadEvent event){
       this.event = event;
     }
-    
   }
 
   private class AsyncListener {
