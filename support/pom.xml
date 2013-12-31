@@ -16,6 +16,7 @@
   <name>support</name>
 
   <modules>
+    <module>guice</module>
     <module>shiro</module>
   </modules>
   
