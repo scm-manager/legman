@@ -246,6 +246,22 @@
     </plugins>
 
   </build>
+  
+  <distributionManagement>
+
+    <repository>
+      <id>maven.scm-manager.org</id>
+      <name>scm-manager release repository</name>
+      <url>http://maven.scm-manager.org/nexus/content/repositories/releases</url>
+    </repository>
+
+    <snapshotRepository>
+      <id>maven.scm-manager.org</id>
+      <name>scm-manager snapshot repository</name>
+      <url>http://maven.scm-manager.org/nexus/content/repositories/snapshots</url>
+    </snapshotRepository>
+
+  </distributionManagement>
 
   <properties>
     <!-- test libraries -->
