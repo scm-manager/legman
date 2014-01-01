@@ -18,7 +18,7 @@
   <dependency>
     <groupId>com.github.legman</groupId>
     <artifactId>core</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
   </dependency>
 
 </dependencies>
