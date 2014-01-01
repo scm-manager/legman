@@ -76,11 +76,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * includes implemented interfaces, all superclasses, and all interfaces
  * implemented by superclasses.
  *
- * <p>When {@code post} is called, all registered handlers for an event are run
- * in sequence, so handlers should be reasonably quick.  If an event may trigger
- * an extended process (such as a database load), spawn a thread or queue it for
- * later.  (For a convenient way to do this, use an Async{@link EventBus}.)
- *
  * <h2>Handler Methods</h2>
  * Event handler methods must accept only one argument: the event.
  *
@@ -91,9 +86,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  * <p>The EventBus guarantees that it will not call a handler method from
  * multiple threads simultaneously, unless the method explicitly allows it by
- * bearing the {@link AllowConcurrentEvents} annotation.  If this annotation is
- * not present, handler methods need not worry about being reentrant, unless
- * also called from outside the EventBus.
+ * bearing the {@link Subscribe#allowConcurrentAccess()} attribute.  If this 
+ * attribute is not present, handler methods need not worry about being 
+ * reentrant, unless also called from outside the EventBus.
  *
  * <h2>Dead Events</h2>
  * If an event is posted, but no registered handlers can accept it, it is
@@ -106,10 +101,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * receive any Object will never receive a DeadEvent.
  *
  * <p>This class is safe for concurrent use.
- * 
- * <p>See the Guava User Guide article on <a href=
- * "http://code.google.com/p/guava-libraries/wiki/EventBusExplained">
- * {@code EventBus}</a>.
  *
  * @author Cliff Biffle
  * @author Sebastian Sdorra
