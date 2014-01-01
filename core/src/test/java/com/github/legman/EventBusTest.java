@@ -33,15 +33,15 @@ public class EventBusTest
   private String strongReferenceTest;
   
   @Test
-  public void testWeakReference()
+  public void testWeakReference() throws InterruptedException
   {
     EventBus bus = new EventBus();
     bus.register(new WeakListener());
     assertEquals(1, bus.handlersByType.size());
     System.gc();
-    assertEquals(0, bus.handlersByType.size());
     bus.post("event");
     assertNull(weakReferenceTest);
+    assertEquals(0, bus.handlersByType.size());
   }
   
   @Test
