@@ -15,14 +15,17 @@
  */
 
 
+
 package com.github.legman;
+
+//~--- non-JDK imports --------------------------------------------------------
 
 import com.github.legman.internal.ServiceLocator;
 
 /**
- * Singleton factory for {@link EventBus} instances. The {@link EventBus} 
- * instances are stored by a {@link EventBusRegistryProvider}. The default 
- * implementation of the provider uses a {@link java.util.Map}. The 
+ * Singleton factory for {@link EventBus} instances. The {@link EventBus}
+ * instances are stored by a {@link EventBusRegistryProvider}. The default
+ * implementation of the provider uses a {@link java.util.Map}. The
  * implementation can be changed with service locator pattern.
  *
  * @author Sebastian Sdorra
@@ -30,18 +33,35 @@ import com.github.legman.internal.ServiceLocator;
  */
 public final class EventBusRegistry
 {
- 
-  private static final EventBusRegistryProvider provider = 
-    ServiceLocator.locate(
-      EventBusRegistryProvider.class, DefaultEventBusRegistryProvider.class
-    );
-  
-  public static EventBus getEventBus(){
+
+  /** provider */
+  private static final EventBusRegistryProvider provider =
+    ServiceLocator.locate(EventBusRegistryProvider.class,
+      DefaultEventBusRegistryProvider.class);
+
+  //~--- get methods ----------------------------------------------------------
+
+  /**
+   * Returns the default {@link EventBus}, if the default {@link EventBus} does 
+   * not exists a new one is created.
+   *
+   * @return default {@link EventBus}.
+   */
+  public static EventBus getEventBus()
+  {
     return getEventBus(EventBus.DEFAULT_NAME);
   }
-  
-  public static EventBus getEventBus(String name){    
+
+  /**
+   * Returns a {@link EventBus} for the given name, if no {@link EventBus} with
+   * this name exists, a new one is created.
+   *
+   * @param name name of the event bus
+   *
+   * @return {@link EventBus} associated with the given name
+   */
+  public static EventBus getEventBus(String name)
+  {
     return provider.getEventBus(name);
   }
-  
 }
