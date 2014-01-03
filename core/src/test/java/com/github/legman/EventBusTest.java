@@ -115,7 +115,27 @@ public class EventBusTest
     bus.post("event");    
   }
   
+  @Test
+  public void testThreadName() throws InterruptedException{
+    EventBus bus = new EventBus("hansolo");
+    ThreadNameTestListener listener = new ThreadNameTestListener();
+    bus.register(bus);
+    bus.post("event");
+    Thread.sleep(200l);
+    assertTrue(listener.threadName.startsWith("hansolo-"));
+  }
+  
   /** Listener classes */
+  
+  private class ThreadNameTestListener {
+    
+    private String threadName;
+    
+    @Subscribe
+    public void handleEvent(String event){
+      threadName = Thread.currentThread().getName();
+    }
+  }
   
   private class AsyncCheckedExceptionListener {
     
