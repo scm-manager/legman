@@ -53,6 +53,7 @@
   <modules>
     <module>core</module>
     <module>support</module>
+    <module>test</module>
   </modules>
 
   <dependencies>
