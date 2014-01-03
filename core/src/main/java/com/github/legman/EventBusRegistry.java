@@ -17,31 +17,31 @@
 
 package com.github.legman;
 
-import com.google.common.collect.Maps;
-import java.util.concurrent.ConcurrentMap;
+import com.github.legman.internal.ServiceLocator;
 
 /**
- * Singleton factory for {@link EventBus} instances.
+ * Singleton factory for {@link EventBus} instances. The {@link EventBus} 
+ * instances are stored by a {@link EventBusRegistryProvider}. The default 
+ * implementation of the provider uses a {@link java.util.Map}. The 
+ * implementation can be changed with service locator pattern.
  *
  * @author Sebastian Sdorra
  * @since 1.0.0
  */
 public final class EventBusRegistry
 {
-  
-  private static final ConcurrentMap<String,EventBus> registry = Maps.newConcurrentMap();
+ 
+  private static final EventBusRegistryProvider provider = 
+    ServiceLocator.locate(
+      EventBusRegistryProvider.class, DefaultEventBusRegistryProvider.class
+    );
   
   public static EventBus getEventBus(){
     return getEventBus(EventBus.DEFAULT_NAME);
   }
   
   public static EventBus getEventBus(String name){    
-    EventBus eventBus = registry.get(name);
-    if ( eventBus == null ){
-        eventBus = new EventBus(name);
-        registry.putIfAbsent(name, eventBus);
-    }
-    return eventBus;
+    return provider.getEventBus(name);
   }
   
 }
