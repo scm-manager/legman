@@ -426,7 +426,7 @@ public class EventBus {
       } else {
         Throwable cause = e.getCause();
         Throwables.propagateIfPossible(cause);
-        throw Throwables.propagate(cause);
+        throw new EventBusException(event, "could not dispatch event", cause);
       }
     }
   }
