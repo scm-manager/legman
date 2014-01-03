@@ -94,11 +94,18 @@ public class EventBusTest
     bus.post("event");
   }
   
-  @Test(expected = RuntimeException.class)
+  @Test
   public void testCheckedException(){
     EventBus bus = new EventBus();
     bus.register(new CheckedExceptionListener());
-    bus.post("event");
+    String event = "event";
+    Object failedEvent = null;
+    try {
+      bus.post(event);
+    } catch (EventBusException ex){
+      failedEvent = ex.getEvent();
+    }
+    assertEquals(event, failedEvent);
   }
   
   @Test
