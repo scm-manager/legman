@@ -119,7 +119,7 @@ public class EventBusTest
   public void testThreadName() throws InterruptedException{
     EventBus bus = new EventBus("hansolo");
     ThreadNameTestListener listener = new ThreadNameTestListener();
-    bus.register(bus);
+    bus.register(listener);
     bus.post("event");
     Thread.sleep(200l);
     assertTrue(listener.threadName.startsWith("hansolo-"));
