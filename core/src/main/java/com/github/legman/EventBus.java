@@ -28,6 +28,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.reflect.TypeToken;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 
 import org.slf4j.Logger;
@@ -42,6 +43,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -191,13 +194,17 @@ public class EventBus {
    * @param identifier  a brief name for this bus, for logging purposes.  Should
    *                    be a valid Java identifier.
    */
-  public EventBus(String identifier) {
+  public EventBus(final String identifier) {
     this.identifier = identifier;
 
     executor = ServiceLocator.locate( Executor.class, new ServiceLocator.ServiceProvider<Executor>() {
       @Override
       public Executor create() {
-        return Executors.newFixedThreadPool(4);
+        return Executors.newFixedThreadPool(4, 
+          new ThreadFactoryBuilder().setNameFormat(
+            identifier.concat("-%s")
+          ).build()
+        );
       }
     });
 
