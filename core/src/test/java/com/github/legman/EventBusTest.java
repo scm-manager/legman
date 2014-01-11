@@ -136,6 +136,12 @@ public class EventBusTest
     assertEquals(0, bus.handlersByType.size());
   }
   
+  @Test
+  public void testEmptyEventBus(){
+    EventBus bus = new EventBus();
+    bus.post("event");
+  }
+  
   /** Listener classes */
   
   private class ThreadNameTestListener {

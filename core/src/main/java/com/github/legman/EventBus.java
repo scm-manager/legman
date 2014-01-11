@@ -339,7 +339,7 @@ public class EventBus {
   /**
    * Remove all cleared weak references from eventbus.
    * 
-   * @since 1.3.0
+   * @since 1.2.1
    */
   void cleanupWeakReferences()
   {
