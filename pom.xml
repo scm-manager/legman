@@ -54,6 +54,7 @@
     <module>core</module>
     <module>support</module>
     <module>test</module>
+    <module>legman-maven-plugin</module>
   </modules>
 
   <dependencies>
