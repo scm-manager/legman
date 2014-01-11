@@ -94,10 +94,7 @@ class EventHandler {
    */
   public void handleEvent(Object event) throws InvocationTargetException {
     checkNotNull(event);
-    Object t = target;
-    if (t == null){
-      t = targetReference.get();
-    }
+    Object t = getTarget();
     if ( t != null ){
       try {
         method.invoke(t, new Object[] { event });
@@ -114,6 +111,23 @@ class EventHandler {
     } else {
       eventBus.removeEventHandler(this);
     }
+  }
+  
+  /**
+   * Returns target object or null if the event handler uses a weak reference 
+   * and the object is no longer available.
+   * 
+   * @return target object
+   * 
+   * @since 1.3.0
+   */
+  Object getTarget()
+  {
+    Object t = target;
+    if (t == null){
+      t = targetReference.get();
+    }
+    return t;
   }
     
 

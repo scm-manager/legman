@@ -27,6 +27,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
+import com.google.common.collect.Sets;
 import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -333,6 +334,43 @@ public class EventBus {
 
     dispatchSynchronousQueuedEvents();
     dispatchAsynchronousQueuedEvents();
+  }
+  
+  /**
+   * Remove all cleared weak references from eventbus.
+   * 
+   * @since 1.3.0
+   */
+  void cleanupWeakReferences()
+  {
+    logger.trace("start cleanup weak references");
+    Set<Entry<Class<?>,EventHandler>> removable = Sets.newHashSet();
+    handlersByTypeLock.readLock().lock();
+    try {
+      for ( Entry<Class<?>, EventHandler> e : handlersByType.entries() )
+      {
+        if ( e.getValue().getTarget() == null )
+        {
+          removable.add(e);
+        }
+      }
+    } finally {
+      handlersByTypeLock.readLock().unlock();
+    }
+    if ( ! removable.isEmpty() ){
+      logger.debug("found {} expired references, start removing");
+      handlersByTypeLock.writeLock().lock();
+      try {
+        for ( Entry<Class<?>, EventHandler> e : removable )
+        {
+          handlersByType.remove(e.getKey(), e.getValue());
+        }
+      } finally {
+        handlersByTypeLock.writeLock().unlock();
+      }
+    } else {
+      logger.trace("could not find expired references");
+    }
   }
 
   /**

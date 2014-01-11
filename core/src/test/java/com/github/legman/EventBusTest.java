@@ -125,6 +125,17 @@ public class EventBusTest
     assertTrue(listener.threadName.startsWith("hansolo-"));
   }
   
+  @Test
+  public void testCleanupWeakReferences() throws InterruptedException
+  {
+    EventBus bus = new EventBus();
+    bus.register(new WeakListener());
+    assertEquals(1, bus.handlersByType.size());
+    System.gc();
+    bus.cleanupWeakReferences();
+    assertEquals(0, bus.handlersByType.size());
+  }
+  
   /** Listener classes */
   
   private class ThreadNameTestListener {
