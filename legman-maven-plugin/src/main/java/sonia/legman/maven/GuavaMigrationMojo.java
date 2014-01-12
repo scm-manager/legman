@@ -43,7 +43,7 @@ import java.io.InputStream;
 /**
  *
  * @author Sebastian Sdorra
- * @goal guava-warn
+ * @goal guava-migration-warning
  * @phase process-classes
  * @requiresDependencyResolution runtime
  */
@@ -70,6 +70,32 @@ public class GuavaMigrationMojo extends AbstractMojo
         e);
     }
   }
+
+  //~--- set methods ----------------------------------------------------------
+
+  /**
+   * Method description
+   *
+   *
+   * @param classesDirectory
+   */
+  public void setClassesDirectory(File classesDirectory)
+  {
+    this.classesDirectory = classesDirectory;
+  }
+
+  /**
+   * Method description
+   *
+   *
+   * @param template
+   */
+  public void setTemplate(String template)
+  {
+    this.template = template;
+  }
+
+  //~--- methods --------------------------------------------------------------
 
   /**
    * Method description
@@ -100,11 +126,15 @@ public class GuavaMigrationMojo extends AbstractMojo
         public void handleMethodAnnotation(String className, String methodName,
           String annotationName)
         {
-          StringBuilder warning = new StringBuilder("method ");
+          //J-
+          String message = template
+            .replace("{class}", className)
+            .replace("{method}", methodName)
+            .replace("{annotation}", annotationName)
+            .replace("{subscribe}", com.github.legman.Subscribe.class.getName());
+          //J+ 
 
-          warning.append(methodName).append(" of class ").append(className);
-          warning.append(" uses annotation ").append(annotationName);
-          getLog().warn(warning);
+          getLog().warn(message);
         }
       });
 
@@ -151,8 +181,14 @@ public class GuavaMigrationMojo extends AbstractMojo
   /**
    * The directory containing generated classes.
    *
-   * @parameter property="${project.build.outputDirectory}"
+   * @parameter expression="${project.build.directory}/classes"
    * @required
    */
   private File classesDirectory;
+
+  /**
+   * @parameter
+   */
+  private String template =
+    "method {method} of class {class} uses {annotation}, please use {subscribe} annotation";
 }
