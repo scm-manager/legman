@@ -33,7 +33,8 @@ import java.util.Map;
  * @author Sebastian Sdorra
  * @since 1.1.0
  */
-public class ThreadLocalEventBusRegistryProvider implements EventBusRegistryProvider
+public class ThreadLocalEventBusRegistryProvider
+  implements EventBusRegistryProvider
 {
 
   /** Field description */
@@ -46,20 +47,18 @@ public class ThreadLocalEventBusRegistryProvider implements EventBusRegistryProv
    * Method description
    *
    */
-  static void release()
+  static void initialize()
   {
-    System.out.println("release");
-    store.remove();
+    store.set(new HashMap<String, EventBus>());
   }
 
   /**
    * Method description
    *
    */
-  static void initialize()
+  static void release()
   {
-    System.out.println("initialize");
-    store.set(new HashMap<String, EventBus>());
+    store.remove();
   }
 
   //~--- get methods ----------------------------------------------------------
