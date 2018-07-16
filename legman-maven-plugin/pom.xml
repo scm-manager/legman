@@ -9,8 +9,8 @@
     <artifactId>legman</artifactId>
     <version>1.2.1-SNAPSHOT</version>
   </parent>
-  
-  <groupId>sonia.legman</groupId>
+
+  <groupId>com.github.legman</groupId>
   <artifactId>legman-maven-plugin</artifactId>
   <version>1.2.1-SNAPSHOT</version>
   <name>legman-maven-plugin</name>
@@ -27,7 +27,7 @@
     <dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm-debug-all</artifactId>
-      <version>4.2</version>
+      <version>5.2</version>
     </dependency>
     
     <dependency>
