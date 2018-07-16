@@ -43,7 +43,7 @@ import java.io.InputStream;
 /**
  *
  * @author Sebastian Sdorra
- * @goal guava-migration-warning
+ * @goal guava-migration-check
  * @phase process-classes
  * @requiresDependencyResolution runtime
  */
@@ -62,12 +62,19 @@ public class GuavaMigrationMojo extends AbstractMojo
   {
     try
     {
-      process(classesDirectory);
+      if (classesDirectory.exists()) {
+        process(classesDirectory);
+      } else {
+        getLog().info("skip guava migration check, because the classes directory could not be found");
+      }
     }
     catch (IOException e)
     {
       throw new MojoExecutionException("Failed to process guava annotations",
         e);
+    }
+    catch (MigrationViolationException ex) {
+      throw new MojoFailureException(ex.getMessage());
     }
   }
 
@@ -94,6 +101,11 @@ public class GuavaMigrationMojo extends AbstractMojo
   {
     this.template = template;
   }
+
+  public void setFail(boolean fail) {
+    this.fail = fail;
+  }
+
 
   //~--- methods --------------------------------------------------------------
 
@@ -134,7 +146,7 @@ public class GuavaMigrationMojo extends AbstractMojo
             .replace("{subscribe}", com.github.legman.Subscribe.class.getName());
           //J+ 
 
-          getLog().warn(message);
+          handleViolation(message);
         }
       });
 
@@ -143,6 +155,14 @@ public class GuavaMigrationMojo extends AbstractMojo
     finally
     {
       Closeables.close(stream, true);
+    }
+  }
+
+  private void handleViolation(String message) {
+    if (fail) {
+      throw new MigrationViolationException(message);
+    } else {
+      getLog().warn(message);
     }
   }
 
@@ -191,4 +211,11 @@ public class GuavaMigrationMojo extends AbstractMojo
    */
   private String template =
     "method {method} of class {class} uses {annotation}, please use {subscribe} annotation";
+
+  /**
+   * Fail if an guava eventbus annotation is found.
+   *
+   * @parameter
+   */
+  private boolean fail = false;
 }
