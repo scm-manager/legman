@@ -53,7 +53,7 @@ class EventHandler {
   private final Method method;
 
   /** Event should be handled asynchronous. */
-  private final boolean asnyc;
+  private final boolean async;
   
   
   private final EventBus eventBus;
@@ -67,7 +67,7 @@ class EventHandler {
    * @param referenceType type of the reference
    * @param async true if the event should be handled async
    */
-  EventHandler(EventBus eventBus, Object target, Method method, ReferenceType referenceType, boolean asnyc) {
+  EventHandler(EventBus eventBus, Object target, Method method, ReferenceType referenceType, boolean async) {
     Preconditions.checkNotNull(eventBus, "eventbus cannot be null.");
     Preconditions.checkNotNull(target,
         "EventHandler target cannot be null.");
@@ -81,7 +81,7 @@ class EventHandler {
       this.targetReference = new WeakReference<Object>(target);
     }
     this.method = method;
-    this.asnyc = asnyc;
+    this.async = async;
     method.setAccessible(true);
   }
 
@@ -136,11 +136,22 @@ class EventHandler {
    * Returns true if the event should be handled asynchronous.
    * 
    * @return true if the event is handled async.
+   *
+   * @deprecated because of typo in the method name, use {@link #isAsync()} instead
    */
+  @Deprecated
   public boolean isAsnyc() {
-    return asnyc;
+    return async;
   }
 
+  /**
+   * Returns {@code true} if the event should be handled asynchronous.
+   *
+   * @return {@code true} if the event is handled async.
+   */
+  public boolean isAsync() {
+    return async;
+  }
 
   @Override public boolean equals(@Nullable Object obj) {
     if (obj instanceof EventHandler) {
@@ -148,14 +159,14 @@ class EventHandler {
       // Use == so that different equal instances will still receive events.
       // We only guard against the case that the same object is registered
       // multiple times
-      return target == that.target && targetReference == that.targetReference && method.equals(that.method) && asnyc == that.asnyc;
+      return target == that.target && targetReference == that.targetReference && method.equals(that.method) && async == that.async;
     }
     return false;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(target, targetReference, method, asnyc);
+    return Objects.hashCode(target, targetReference, method, async);
   }
 
 
@@ -164,7 +175,7 @@ class EventHandler {
     return MoreObjects.toStringHelper(this)
             .addValue(target)
             .addValue(method)
-            .addValue(asnyc)
+            .addValue(async)
             .toString();
   }
 }
