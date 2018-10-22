@@ -18,6 +18,7 @@ package com.github.legman;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import java.lang.ref.WeakReference;
@@ -160,7 +161,7 @@ class EventHandler {
 
   @Override
   public String toString() {
-    return Objects.toStringHelper(this)
+    return MoreObjects.toStringHelper(this)
             .addValue(target)
             .addValue(method)
             .addValue(asnyc)
