@@ -280,7 +280,7 @@
     <slf4j.version>1.7.5</slf4j.version>
 
     <!-- build properties -->
-    <project.build.javaLevel>1.6</project.build.javaLevel>
+    <project.build.javaLevel>1.7</project.build.javaLevel>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <netbeans.hint.license>Apache-License</netbeans.hint.license>
   </properties>

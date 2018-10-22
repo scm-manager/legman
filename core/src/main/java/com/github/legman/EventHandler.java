@@ -19,12 +19,12 @@ package com.github.legman;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import java.lang.ref.WeakReference;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 import javax.annotation.Nullable;
 
@@ -166,7 +166,7 @@ class EventHandler {
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(target, targetReference, method, async);
+    return Objects.hash(target, targetReference, method, async);
   }
 
 

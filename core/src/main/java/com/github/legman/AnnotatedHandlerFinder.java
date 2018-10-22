@@ -16,7 +16,6 @@
 
 package com.github.legman;
 
-import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -30,10 +29,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.annotation.Nullable;
 
@@ -100,7 +96,7 @@ public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
     
     @Override
     public int hashCode() {
-      return Objects.hashCode(name, parameterTypes);
+      return Objects.hash(name, parameterTypes);
     }
     
     @Override

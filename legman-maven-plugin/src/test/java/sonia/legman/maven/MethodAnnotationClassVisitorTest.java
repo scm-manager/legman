@@ -20,7 +20,7 @@ package sonia.legman.maven;
 
 //~--- non-JDK imports --------------------------------------------------------
 
-import com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  *
@@ -198,9 +199,9 @@ public class MethodAnnotationClassVisitorTest
 
       final AnnotatedMethod other = (AnnotatedMethod) obj;
 
-      return Objects.equal(className, other.className)
-        && Objects.equal(methodName, other.methodName)
-        && Objects.equal(annotationName, other.annotationName);
+      return Objects.equals(className, other.className)
+        && Objects.equals(methodName, other.methodName)
+        && Objects.equals(annotationName, other.annotationName);
     }
 
     /**
@@ -212,7 +213,7 @@ public class MethodAnnotationClassVisitorTest
     @Override
     public int hashCode()
     {
-      return Objects.hashCode(className, methodName, annotationName);
+      return Objects.hash(className, methodName, annotationName);
     }
 
     /**
@@ -225,7 +226,7 @@ public class MethodAnnotationClassVisitorTest
     public String toString()
     {
       //J-
-      return Objects.toStringHelper(this)
+      return MoreObjects.toStringHelper(this)
                     .addValue(className)
                     .addValue(methodName)
                     .addValue(annotationName)
