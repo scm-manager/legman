@@ -6,12 +6,12 @@
   <parent>
     <groupId>com.github.legman.support</groupId>
     <artifactId>support</artifactId>
-    <version>1.4.2-SNAPSHOT</version>
+    <version>1.4.2</version>
   </parent>
 
   <groupId>com.github.legman.support</groupId>
   <artifactId>shiro</artifactId>
-  <version>1.4.2-SNAPSHOT</version>
+  <version>1.4.2</version>
   <name>shiro</name>
   
   <dependencies>
@@ -19,7 +19,7 @@
     <dependency>
       <groupId>com.github.legman</groupId>
       <artifactId>core</artifactId>
-      <version>1.4.2-SNAPSHOT</version>
+      <version>1.4.2</version>
     </dependency>
     
     <dependency>
