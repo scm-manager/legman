@@ -129,7 +129,7 @@ public class GuavaMigrationMojo extends AbstractMojo
 
       Builder builder = MethodAnnotationClassVisitor.builder();
 
-      builder.api(Opcodes.ASM4);
+      builder.api(Opcodes.ASM5);
       builder.annotateClasses(Subscribe.class, AllowConcurrentEvents.class);
       builder.methodAnnotationHandler(new MethodAnnotationHandler()
       {

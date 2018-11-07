@@ -229,7 +229,7 @@ public class MethodAnnotationClassVisitor extends ClassVisitor
     //~--- fields -------------------------------------------------------------
 
     /** Field description */
-    private int api = Opcodes.ASM4;
+    private int api = Opcodes.ASM5;
 
     /** Field description */
     private final Set<Class<? extends Annotation>> annotationClasses =
