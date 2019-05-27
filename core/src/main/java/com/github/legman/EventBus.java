@@ -479,9 +479,8 @@ public class EventBus {
   }
 
   /**
-   * Stops underlying executor, if it is an instance of {@link ExecutorService}.
-   *
-   * @see {@link ExecutorService#shutdown()}
+   * Stops underlying executor, if it is an instance of {@link ExecutorService}. Have a look at
+   * {@link ExecutorService#shutdown()} for more details.
    */
   public void shutdown() {
     if (executor instanceof ExecutorService) {
