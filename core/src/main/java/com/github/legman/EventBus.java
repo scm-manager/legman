@@ -373,7 +373,7 @@ public class EventBus {
    * Events are queued in-order of occurrence so they can be dispatched in the same order.
    */
   void enqueueEvent(Object event, EventHandler handler) {
-    if ( handler.isAsnyc() ){
+    if ( handler.isAsync() ){
       asyncEventsToDispatch.offer(new EventWithHandler(event, handler));
     } else {
       eventsToDispatch.get().offer(new EventWithHandler(event, handler));
@@ -432,7 +432,7 @@ public class EventBus {
    * @param wrapper  wrapper that will call the handler.
    */
   void dispatch(final Object event, final EventHandler wrapper) {
-    if ( wrapper.isAsnyc() ){
+    if ( wrapper.isAsync() ){
       executor.execute(new Runnable() {
         @Override
         public void run() {
@@ -448,7 +448,7 @@ public class EventBus {
     try {
       wrapper.handleEvent(event);
     } catch (InvocationTargetException e) {
-      if ( wrapper.isAsnyc() ){
+      if ( wrapper.isAsync() ){
         StringBuilder msg = new StringBuilder(identifier);
         msg.append(" - could not dispatch event: ").append(event);
         msg.append(" to handler ").append(wrapper);

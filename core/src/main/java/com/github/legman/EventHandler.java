@@ -141,7 +141,7 @@ class EventHandler {
    */
   @Deprecated
   public boolean isAsnyc() {
-    return async;
+    return isAsync();
   }
 
   /**
