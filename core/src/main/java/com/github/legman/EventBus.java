@@ -352,7 +352,7 @@ public class EventBus {
       handlersByTypeLock.readLock().unlock();
     }
     if ( ! removable.isEmpty() ){
-      logger.debug("found {} expired references, start removing");
+      logger.debug("found {} expired references, start removing", removable.size());
       handlersByTypeLock.writeLock().lock();
       try {
         for ( Entry<Class<?>, EventHandler> e : removable )
