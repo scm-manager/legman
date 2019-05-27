@@ -40,6 +40,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -474,6 +475,17 @@ public class EventBus {
       return flattenHierarchyCache.getUnchecked(concreteClass);
     } catch (UncheckedExecutionException e) {
       throw Throwables.propagate(e.getCause());
+    }
+  }
+
+  /**
+   * Stops underlying executor, if it is an instance of {@link ExecutorService}.
+   *
+   * @see {@link ExecutorService#shutdown()}
+   */
+  public void shutdown() {
+    if (executor instanceof ExecutorService) {
+      ((ExecutorService) executor).shutdown();
     }
   }
 
