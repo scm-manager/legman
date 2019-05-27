@@ -45,11 +45,10 @@ import javax.annotation.Nullable;
 public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
   /**
    * A thread-safe cache that contains the mapping from each class to all methods in that class and
-   * all super-classes, that are annotated with {@code @Subscribe}. The cache is shared across all
-   * instances of this class; this greatly improves performance if multiple EventBus instances are
-   * created and objects of the same class are registered on all of them.
+   * all super-classes, that are annotated with {@code @Subscribe}. This cache is not shared between instances in order
+   * to avoid class loader leaks, in environments where classes will be load dynamically.
    */
-  private static final LoadingCache<Class<?>, ImmutableList<EventMetadata>> handlerMethodsCache =
+  private final LoadingCache<Class<?>, ImmutableList<EventMetadata>> handlerMethodsCache =
       CacheBuilder.newBuilder()
           .weakKeys()
           .build(new CacheLoader<Class<?>, ImmutableList<EventMetadata>>() {
@@ -77,7 +76,7 @@ public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
     return methodsInListener;
   }
 
-  private static ImmutableList<EventMetadata> getEventMetadata(Class<?> clazz) {
+  private ImmutableList<EventMetadata> getEventMetadata(Class<?> clazz) {
     try {
       return handlerMethodsCache.getUnchecked(clazz);
     } catch (UncheckedExecutionException e) {

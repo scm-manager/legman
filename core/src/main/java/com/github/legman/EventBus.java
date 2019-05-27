@@ -16,8 +16,6 @@
 
 package com.github.legman;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.github.legman.internal.ServiceLocator;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
@@ -31,7 +29,6 @@ import com.google.common.collect.Sets;
 import com.google.common.reflect.TypeToken;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.UncheckedExecutionException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +43,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 
 /**
@@ -111,11 +110,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class EventBus {
 
   /**
-   * A thread-safe cache for flattenHierarchy(). The Class class is immutable. This cache is shared
-   * across all EventBus instances, which greatly improves performance if multiple such instances
-   * are created and objects of the same class are posted on all of them.
+   * A thread-safe cache for flattenHierarchy(). The Class class is immutable. This cache is not shared between
+   * instances in order to avoid class loader leaks, in environments where classes will be load dynamically.
    */
-  private static final LoadingCache<Class<?>, Set<Class<?>>> flattenHierarchyCache =
+  private final LoadingCache<Class<?>, Set<Class<?>>> flattenHierarchyCache =
       CacheBuilder.newBuilder()
           .weakKeys()
           .build(new CacheLoader<Class<?>, Set<Class<?>>>() {
@@ -206,11 +204,6 @@ public class EventBus {
         );
       }
     });
-
-    ExecutorDecoratorFactory decorator = ServiceLocator.locate(ExecutorDecoratorFactory.class);
-    if (decorator != null){
-      executor = decorator.decorate(executor);
-    }
   }
 
   /**
