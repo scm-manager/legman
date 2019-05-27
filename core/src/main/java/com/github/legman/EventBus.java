@@ -154,7 +154,7 @@ public class EventBus {
   private final ThreadLocal<Queue<EventWithHandler>> eventsToDispatch =
       new ThreadLocal<Queue<EventWithHandler>>() {
     @Override protected Queue<EventWithHandler> initialValue() {
-      return new LinkedList<EventWithHandler>();
+      return new LinkedList<>();
     }
   };
 
@@ -174,7 +174,7 @@ public class EventBus {
 
   /** the queue of asynchronous events is shared across all threads */
   private final ConcurrentLinkedQueue<EventWithHandler> asyncEventsToDispatch =
-          new ConcurrentLinkedQueue<EventWithHandler>();
+          new ConcurrentLinkedQueue<>();
 
   /** name of the default event bus */
   static final String DEFAULT_NAME = "default";
