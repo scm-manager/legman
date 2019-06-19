@@ -141,6 +141,20 @@ public class EventBusTest
     EventBus bus = new EventBus();
     bus.post("event");
   }
+
+  @Test
+  public void testShutdown() throws InterruptedException {
+    EventBus bus = new EventBus();
+    AsyncListener listener = new AsyncListener();
+    bus.register(listener);
+    bus.shutdown();
+
+    bus.post("event");
+
+    assertNull(listener.event);
+    Thread.sleep(500l);
+    assertNull(listener.event);
+  }
   
   /** Listener classes */
   

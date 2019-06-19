@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -178,6 +179,8 @@ public class EventBus {
 
   /** name of the default event bus */
   static final String DEFAULT_NAME = "default";
+
+  private AtomicBoolean shutdown = new AtomicBoolean(false);
   
   /**
    * Creates a new EventBus named "default".
@@ -303,6 +306,11 @@ public class EventBus {
    * @param event  event to post.
    */
   public void post(Object event) {
+    if (shutdown.get()) {
+      logger.warn("eventbus is already shutdown, we could not process event {}", event);
+      return;
+    }
+
     Set<Class<?>> dispatchTypes = flattenHierarchy(event.getClass());
 
     boolean dispatched = false;
@@ -369,7 +377,7 @@ public class EventBus {
 
   /**
    * Queue the {@code event} for dispatch during
-   * {@link #dispatchSynchronousQueuedEvents()} and {@linl #dispatchAsynchronousQueuedEvents}.
+   * {@link #dispatchSynchronousQueuedEvents()} and {@link #dispatchAsynchronousQueuedEvents}.
    * Events are queued in-order of occurrence so they can be dispatched in the same order.
    */
   void enqueueEvent(Object event, EventHandler handler) {
@@ -432,6 +440,11 @@ public class EventBus {
    * @param wrapper  wrapper that will call the handler.
    */
   void dispatch(final Object event, final EventHandler wrapper) {
+    if (shutdown.get()) {
+      logger.warn("eventbus is already shutdown, we could not process event {}", event);
+      return;
+    }
+
     if ( wrapper.isAsync() ){
       executor.execute(new Runnable() {
         @Override
@@ -483,6 +496,7 @@ public class EventBus {
    * {@link ExecutorService#shutdown()} for more details.
    */
   public void shutdown() {
+    shutdown.set(true);
     if (executor instanceof ExecutorService) {
       ((ExecutorService) executor).shutdown();
     }
