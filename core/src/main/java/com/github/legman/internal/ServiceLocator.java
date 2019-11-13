@@ -30,6 +30,13 @@ import java.util.ServiceLoader;
 public final class ServiceLocator
 {
 
+  private ServiceLocator() {
+  }
+
+  public static <T> Iterable<T> locate(Class<T> serviceClass) {
+    return ServiceLoader.load(serviceClass, getClassLoader());
+  }
+
   /**
    * Method description
    *
@@ -40,9 +47,9 @@ public final class ServiceLocator
    *
    * @return
    */
-  public static <T> T locate(Class<T> serviceClass, ServiceProvider<T> provider)
+  public static <T> T locateOne(Class<T> serviceClass, ServiceProvider<T> provider)
   {
-    T service = locate(serviceClass);
+    T service = locateOne(serviceClass);
 
     if (service == null)
     {
@@ -61,12 +68,10 @@ public final class ServiceLocator
    *
    * @return
    */
-  public static <T> T locate(Class<T> serviceClass)
+  public static <T> T locateOne(Class<T> serviceClass)
   {
     T service = null;
-    ServiceLoader<T> loader = ServiceLoader.load(serviceClass,
-                                getClassLoader());
-    Iterator<T> iterator = loader.iterator();
+    Iterator<T> iterator = locate(serviceClass).iterator();
 
     if (iterator.hasNext())
     {
@@ -86,10 +91,10 @@ public final class ServiceLocator
    *
    * @return
    */
-  public static <T> T locate(Class<T> serviceClass,
-    Class<? extends T> defaultServiceClass)
+  public static <T> T locateOne(Class<T> serviceClass,
+                                Class<? extends T> defaultServiceClass)
   {
-    T service = locate(serviceClass);
+    T service = locateOne(serviceClass);
 
     if (service == null)
     {
@@ -136,7 +141,7 @@ public final class ServiceLocator
    * @param <T>
    *
    * @version        Enter version here..., 13/07/14
-   * @author         Enter your name here...    
+   * @author         Enter your name here...
    */
   public static interface ServiceProvider<T>
   {

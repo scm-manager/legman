@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ShiroExecutorDecoratorFactory implements ExecutorDecoratorFactory
 {
-  
+
   /**
    * the logger for ShiroExecutorDecoratorFactory
    */
@@ -43,11 +43,11 @@ public class ShiroExecutorDecoratorFactory implements ExecutorDecoratorFactory
   public Executor decorate(Executor executor)
   {
     logger.debug(
-      "register {} as {} for legman", 
-      ShiroExecutorDecoratorFactory.class, 
+      "register {} as {} for legman",
+      ShiroExecutorDecoratorFactory.class,
       ExecutorDecoratorFactory.class
     );
     return new SubjectAwareExecutor(executor);
   }
- 
+
 }

@@ -27,7 +27,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 import com.google.common.reflect.TypeToken;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +40,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -89,8 +87,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * <p>The EventBus guarantees that it will not call a handler method from
  * multiple threads simultaneously, unless the method explicitly allows it by
- * bearing the {@link Subscribe#allowConcurrentAccess()} attribute.  If this 
- * attribute is not present, handler methods need not worry about being 
+ * bearing the {@link Subscribe#allowConcurrentAccess()} attribute.  If this
+ * attribute is not present, handler methods need not worry about being
  * reentrant, unless also called from outside the EventBus.
  *
  * <h2>Dead Events</h2>
@@ -149,7 +147,7 @@ public class EventBus {
    * {@link AnnotatedHandlerFinder}.
    */
   private final HandlerFindingStrategy finder =
-      ServiceLocator.locate(HandlerFindingStrategy.class, AnnotatedHandlerFinder.class);
+      ServiceLocator.locateOne(HandlerFindingStrategy.class, AnnotatedHandlerFinder.class);
 
   /** queues of events for the current thread to dispatch */
   private final ThreadLocal<Queue<EventWithHandler>> eventsToDispatch =
@@ -166,7 +164,7 @@ public class EventBus {
       return false;
     }
   };
-  
+
   /** identifier of the event bus */
   private String identifier;
 
@@ -181,7 +179,7 @@ public class EventBus {
   static final String DEFAULT_NAME = "default";
 
   private AtomicBoolean shutdown = new AtomicBoolean(false);
-  
+
   /**
    * Creates a new EventBus named "default".
    */
@@ -197,22 +195,22 @@ public class EventBus {
    */
   public EventBus(final String identifier) {
     this.identifier = identifier;
+    this.executor = createExecutor(identifier);
+  }
 
-    executor = ServiceLocator.locate( Executor.class, new ServiceLocator.ServiceProvider<Executor>() {
-      @Override
-      public Executor create() {
-        return Executors.newFixedThreadPool(4, 
-          new ThreadFactoryBuilder().setNameFormat(
-            identifier.concat("-%s")
-          ).build()
-        );
-      }
-    });
+  private Executor createExecutor(String identifier) {
+    ExecutorFactory factory = ServiceLocator.locateOne(ExecutorFactory.class, DefaultExecutorFactory.class);
+    Executor e = factory.create(identifier);
+    Iterable<ExecutorDecoratorFactory> decorators = ServiceLocator.locate(ExecutorDecoratorFactory.class);
+    for (ExecutorDecoratorFactory decoratorFactory : decorators) {
+      e = decoratorFactory.decorate(e);
+    }
+    return e;
   }
 
   /**
    * Returns the identifier of the EventBus.
-   * 
+   *
    * @return identifier of EventBus.
    */
   String getIdentifier()
@@ -264,22 +262,22 @@ public class EventBus {
       }
     }
   }
-  
+
   /**
    * Remove an registered {@link EventHandler} from the {@link EventBus}.
-   * 
+   *
    * @param eventHandler event handler which should be removed
    */
   void removeEventHandler(EventHandler eventHandler){
     Entry<Class<?>,EventHandler> entry = null;
-    
+
     for ( Entry<Class<?>,EventHandler> e :  handlersByType.entries() ){
       if ( e.getValue() == eventHandler ){
         entry = e;
         break;
       }
     }
-    
+
     if ( entry != null ){
       handlersByTypeLock.writeLock().lock();
       try {
@@ -337,10 +335,10 @@ public class EventBus {
     dispatchSynchronousQueuedEvents();
     dispatchAsynchronousQueuedEvents();
   }
-  
+
   /**
    * Remove all cleared weak references from eventbus.
-   * 
+   *
    * @since 1.2.1
    */
   void cleanupWeakReferences()
@@ -414,7 +412,7 @@ public class EventBus {
     // don't dispatch if we're already dispatching, that would allow reentrancy
     // and out-of-order events. Instead, leave the events to be dispatched
     // after the in-progress dispatch is complete.
-    if (isDispatching.get()) {
+    if (Boolean.TRUE.equals(isDispatching.get())) {
       return;
     }
 

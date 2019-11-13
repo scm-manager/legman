@@ -38,5 +38,5 @@ public interface ExecutorFactory
    *
    * @return new {@link Executor}
    */
-  public Executor createExecutor();
+  Executor create(String identifier);
 }

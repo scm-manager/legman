@@ -36,13 +36,16 @@ public final class EventBusRegistry
 
   /** provider */
   private static final EventBusRegistryProvider provider =
-    ServiceLocator.locate(EventBusRegistryProvider.class,
+    ServiceLocator.locateOne(EventBusRegistryProvider.class,
       DefaultEventBusRegistryProvider.class);
+
+  private EventBusRegistry() {
+  }
 
   //~--- get methods ----------------------------------------------------------
 
   /**
-   * Returns the default {@link EventBus}, if the default {@link EventBus} does 
+   * Returns the default {@link EventBus}, if the default {@link EventBus} does
    * not exists a new one is created.
    *
    * @return default {@link EventBus}.

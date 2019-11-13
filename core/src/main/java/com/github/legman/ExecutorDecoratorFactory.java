@@ -40,5 +40,5 @@ public interface ExecutorDecoratorFactory
    *
    * @return decorated {@link Executor}
    */
-  public Executor decorate(Executor executor);
+  Executor decorate(Executor executor);
 }
