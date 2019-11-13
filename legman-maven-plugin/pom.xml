@@ -6,12 +6,12 @@
   <parent>
     <groupId>com.github.legman</groupId>
     <artifactId>legman</artifactId>
-    <version>1.6.0</version>
+    <version>1.6.1-SNAPSHOT</version>
   </parent>
 
   <groupId>com.github.legman</groupId>
   <artifactId>legman-maven-plugin</artifactId>
-  <version>1.6.0</version>
+  <version>1.6.1-SNAPSHOT</version>
   <name>legman-maven-plugin</name>
   <packaging>maven-plugin</packaging>
 
@@ -32,7 +32,7 @@
     <dependency>
       <groupId>com.github.legman</groupId>
       <artifactId>core</artifactId>
-      <version>1.6.0</version>
+      <version>1.6.1-SNAPSHOT</version>
     </dependency>
 
     <dependency>
