@@ -6,12 +6,12 @@
   <parent>
     <groupId>com.github.legman</groupId>
     <artifactId>legman</artifactId>
-    <version>1.6.1</version>
+    <version>1.6.2-SNAPSHOT</version>
   </parent>
 
   <groupId>com.github.legman</groupId>
   <artifactId>core</artifactId>
-  <version>1.6.1</version>
+  <version>1.6.2-SNAPSHOT</version>
   <name>core</name>
 
   <dependencies>
