@@ -20,8 +20,11 @@ package com.github.legman.shiro;
 
 import com.github.legman.ExecutorDecoratorFactory;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+
 import org.apache.shiro.concurrent.SubjectAwareExecutor;
 
+import org.apache.shiro.concurrent.SubjectAwareExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +50,9 @@ public class ShiroExecutorDecoratorFactory implements ExecutorDecoratorFactory
       ShiroExecutorDecoratorFactory.class,
       ExecutorDecoratorFactory.class
     );
+    if (executor instanceof ExecutorService) {
+      return new SubjectAwareExecutorService((ExecutorService) executor);
+    }
     return new SubjectAwareExecutor(executor);
   }
 
