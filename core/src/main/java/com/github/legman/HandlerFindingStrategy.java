@@ -25,7 +25,7 @@ import com.google.common.collect.Multimap;
  * @author Cliff Biffle
  * @since 1.0.0
  */
-interface HandlerFindingStrategy {
+public interface HandlerFindingStrategy {
 
   /**
    * Finds all suitable event handler methods in {@code source}, organizes them
