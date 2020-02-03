@@ -6,12 +6,12 @@
   <parent>
     <groupId>com.github.legman</groupId>
     <artifactId>legman</artifactId>
-    <version>1.6.2-SNAPSHOT</version>
+    <version>1.6.2</version>
   </parent>
 
   <groupId>com.github.legman.support</groupId>
   <artifactId>support</artifactId>
-  <version>1.6.2-SNAPSHOT</version>
+  <version>1.6.2</version>
   <packaging>pom</packaging>
   <name>support</name>
 
