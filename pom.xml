@@ -276,7 +276,7 @@
 
   <properties>
     <!-- test libraries -->
-    <junit.version>4.11</junit.version>
+    <junit.version>4.13.1</junit.version>
     <slf4j.version>1.7.5</slf4j.version>
 
     <!-- build properties -->
