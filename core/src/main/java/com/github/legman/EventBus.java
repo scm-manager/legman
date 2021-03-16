@@ -16,7 +16,6 @@
 
 package com.github.legman;
 
-import com.github.legman.internal.ServiceLocator;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
@@ -32,8 +31,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
@@ -142,12 +143,9 @@ public class EventBus {
   private static final Logger logger = LoggerFactory.getLogger(EventBus.class);
 
   /**
-   * Strategy for finding handler methods in registered objects. The strategy is
-   * loaded with the {@link java.util.ServiceLoader}. The default strategy is the
-   * {@link AnnotatedHandlerFinder}.
+   * The {@link AnnotatedHandlerFinder} is suitable for finding subscribers.
    */
-  private final HandlerFindingStrategy finder =
-      ServiceLocator.locateOne(HandlerFindingStrategy.class, AnnotatedHandlerFinder.class);
+  private final AnnotatedHandlerFinder finder;
 
   /** queues of events for the current thread to dispatch */
   private final ThreadLocal<Queue<EventWithHandler>> eventsToDispatch =
@@ -166,10 +164,10 @@ public class EventBus {
   };
 
   /** identifier of the event bus */
-  private String identifier;
+  private final String identifier;
 
   /** executor for handling asynchronous events */
-  private Executor executor;
+  private final Executor executor;
 
   /** the queue of asynchronous events is shared across all threads */
   private final ConcurrentLinkedQueue<EventWithHandler> asyncEventsToDispatch =
@@ -178,13 +176,13 @@ public class EventBus {
   /** name of the default event bus */
   static final String DEFAULT_NAME = "default";
 
-  private AtomicBoolean shutdown = new AtomicBoolean(false);
+  private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   /**
    * Creates a new EventBus named "default".
    */
   public EventBus() {
-    this(DEFAULT_NAME);
+    this(new Builder(DEFAULT_NAME));
   }
 
   /**
@@ -193,19 +191,26 @@ public class EventBus {
    * @param identifier  a brief name for this bus, for logging purposes.  Should
    *                    be a valid Java identifier.
    */
-  public EventBus(final String identifier) {
-    this.identifier = identifier;
-    this.executor = createExecutor(identifier);
+  public EventBus(String identifier) {
+    this(new Builder(identifier));
   }
 
-  private Executor createExecutor(String identifier) {
-    ExecutorFactory factory = ServiceLocator.locateOne(ExecutorFactory.class, DefaultExecutorFactory.class);
-    Executor e = factory.create(identifier);
-    Iterable<ExecutorDecoratorFactory> decorators = ServiceLocator.locate(ExecutorDecoratorFactory.class);
-    for (ExecutorDecoratorFactory decoratorFactory : decorators) {
-      e = decoratorFactory.decorate(e);
+  private EventBus(Builder builder) {
+    this.identifier = builder.identifier;
+    this.executor = createExecutor(builder);
+
+    this.finder = new AnnotatedHandlerFinder();
+  }
+
+  private static Executor createExecutor(Builder builder) {
+    Executor executor = builder.executor;
+    if (executor == null) {
+      executor = ExecutorFactory.create(builder.identifier);
     }
-    return e;
+    for (ExecutorDecoratorFactory executorDecoratorFactory : builder.executorDecoratorFactories) {
+      executor = executorDecoratorFactory.decorate(executor);
+    }
+    return executor;
   }
 
   /**
@@ -213,22 +218,18 @@ public class EventBus {
    *
    * @return identifier of EventBus.
    */
-  String getIdentifier()
-  {
+  String getIdentifier() {
     return identifier;
   }
 
   /**
    * Registers all handler methods on {@code object} to receive events.
-   * Handler methods are selected and classified using this EventBus's
-   * {@link HandlerFindingStrategy}; the default strategy is the
-   * {@link AnnotatedHandlerFinder}.
+   * Handler methods are selected and classified using {@link AnnotatedHandlerFinder}.
    *
    * @param object  object whose handler methods should be registered.
    */
   public void register(Object object) {
-    Multimap<Class<?>, EventHandler> methodsInListener =
-        finder.findAllHandlers(this, object);
+    Multimap<Class<?>, EventHandler> methodsInListener = finder.findAllHandlers(this, object);
     handlersByTypeLock.writeLock().lock();
     try {
       handlersByType.putAll(methodsInListener);
@@ -392,8 +393,7 @@ public class EventBus {
    * Dispatch {@code events} in the order they were posted, regardless of
    * the posting thread.
    */
-  @SuppressWarnings("deprecation") // only deprecated for external subclasses
-  protected void dispatchAsynchronousQueuedEvents() {
+  private void dispatchAsynchronousQueuedEvents() {
     while (true) {
       EventWithHandler eventWithHandler = asyncEventsToDispatch.poll();
       if (eventWithHandler == null) {
@@ -507,6 +507,31 @@ public class EventBus {
     public EventWithHandler(Object event, EventHandler handler) {
       this.event = checkNotNull(event);
       this.handler = checkNotNull(handler);
+    }
+  }
+
+  public static class Builder {
+
+    private final String identifier;
+    private Executor executor;
+    private final List<ExecutorDecoratorFactory> executorDecoratorFactories = new ArrayList<>();
+
+    private Builder(String identifier) {
+      this.identifier = identifier;
+    }
+
+    public Builder withExecutor(Executor executor) {
+      this.executor = executor;
+      return this;
+    }
+
+    public Builder withExecutorDecoratorFactory(ExecutorDecoratorFactory executorDecoratorFactory) {
+      this.executorDecoratorFactories.add(executorDecoratorFactory);
+      return this;
+    }
+
+    public EventBus build() {
+      return new EventBus(this);
     }
   }
 }

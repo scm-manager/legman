@@ -34,15 +34,14 @@ import java.util.*;
 import javax.annotation.Nullable;
 
 /**
- * A {@link HandlerFindingStrategy} for collecting all event handler methods that are marked with
- * the {@link Subscribe} annotation.
+ * Collecting all event handler methods that are marked with the {@link Subscribe} annotation.
  *
  * @author Cliff Biffle
  * @author Louis Wasserman
  * @author Sebastian Sdorra
  * @since 1.0.0
  */
-public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
+public class AnnotatedHandlerFinder {
   /**
    * A thread-safe cache that contains the mapping from each class to all methods in that class and
    * all super-classes, that are annotated with {@code @Subscribe}. This cache is not shared between instances in order
@@ -59,11 +58,17 @@ public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
           });
 
   /**
-   * {@inheritDoc}
+   * Finds all suitable event handler methods in {@code source}, organizes them
+   * by the type of event they handle, and wraps them in {@link EventHandler} instances.
    *
-   * This implementation finds all methods marked with a {@link Subscribe} annotation.
+   * @param eventBus event bus
+   * @param listener  object whose handlers are desired.
+   * @return EventHandler objects for each handler method, organized by event
+   *         type.
+   *
+   * @throws IllegalArgumentException if {@code source} is not appropriate for
+   *         this strategy (in ways that this interface does not define).
    */
-  @Override
   public Multimap<Class<?>, EventHandler> findAllHandlers(EventBus eventBus, Object listener) {
     Multimap<Class<?>, EventHandler> methodsInListener = HashMultimap.create();
     Class<?> clazz = listener.getClass();
@@ -83,21 +88,21 @@ public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
       throw Throwables.propagate(e.getCause());
     }
   }
-  
+
   private static final class MethodIdentifier {
     private final String name;
     private final List<Class<?>> parameterTypes;
-    
+
     MethodIdentifier(Method method) {
       this.name = method.getName();
       this.parameterTypes = Arrays.asList(method.getParameterTypes());
     }
-    
+
     @Override
     public int hashCode() {
       return Objects.hash(name, parameterTypes);
     }
-    
+
     @Override
     public boolean equals(@Nullable Object o) {
       if (o instanceof MethodIdentifier) {
@@ -121,10 +126,10 @@ public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
                 + " has @Subscribe annotation, but requires " + parameterTypes.length
                 + " arguments.  Event handler methods must require a single argument.");
           }
-          
+
           MethodIdentifier ident = new MethodIdentifier(superClazzMethod);
           if (!identifiers.containsKey(ident)) {
-            identifiers.put(ident, 
+            identifiers.put(ident,
               new EventMetadata(
                 superClazzMethod,
                 subscribe.referenceType(),
@@ -165,18 +170,18 @@ public class AnnotatedHandlerFinder implements HandlerFindingStrategy {
     EventHandler wrapper;
     if (metadata.allowConcurrentAccess) {
       wrapper = new EventHandler(
-        eventBus, 
-        listener, 
-        metadata.method,  
-        metadata.referenceType, 
+        eventBus,
+        listener,
+        metadata.method,
+        metadata.referenceType,
         metadata.async
       );
     } else {
       wrapper = new SynchronizedEventHandler(
-        eventBus, 
-        listener, 
-        metadata.method, 
-        metadata.referenceType, 
+        eventBus,
+        listener,
+        metadata.method,
+        metadata.referenceType,
         metadata.async
       );
     }
