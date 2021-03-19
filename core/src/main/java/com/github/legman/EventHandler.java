@@ -97,8 +97,7 @@ class EventHandler {
     Object t = getTarget();
     if ( t != null ){
       InvocationContext context = new InvocationContext(
-        eventBus.getInvocationInterceptors(),
-        method, t, event, async
+        eventBus, method, t, event, async
       );
       context.proceed();
     } else {
