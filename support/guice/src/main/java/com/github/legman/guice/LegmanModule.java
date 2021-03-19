@@ -15,7 +15,6 @@
  */
 
 
-
 package com.github.legman.guice;
 
 //~--- non-JDK imports --------------------------------------------------------
@@ -33,51 +32,40 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author Sebastian Sdorra
  * @since 1.0.0
  */
-public class LegmanModule extends AbstractModule
-{
-  
+public class LegmanModule extends AbstractModule {
+
   /**
    * the logger for LegmanModule
    */
-  private static final Logger logger = LoggerFactory.getLogger(
-    LegmanModule.class);
-  
-  public LegmanModule(EventBus eventBus)
-  {
+  private static final Logger logger = LoggerFactory.getLogger(LegmanModule.class);
+
+  public LegmanModule(EventBus eventBus) {
     this.eventBus = eventBus;
   }
-  
+
   @Override
-  protected void configure()
-  {
-    bindListener(Matchers.any(), new TypeListener()
-    {
+  protected void configure() {
+    bindListener(Matchers.any(), new TypeListener() {
 
       @Override
-      public <I> void hear(TypeLiteral<I> type, TypeEncounter<I> encounter)
-      {
-        encounter.register(new InjectionListener<I>()
-        {
+      public <I> void hear(TypeLiteral<I> type, TypeEncounter<I> encounter) {
+        encounter.register(new InjectionListener<I>() {
 
           @Override
-          public void afterInjection(I injectee)
-          {
-            if ( logger.isTraceEnabled() )
-            {
-              Class<?> clazz = injectee.getClass();
-              logger.trace("register subscriber {}", clazz);
+          public void afterInjection(I injectee) {
+            if (logger.isTraceEnabled()) {
+              logger.trace("register subscriber {}", injectee.getClass());
             }
             eventBus.register(injectee);
           }
         });
       }
-      
+
     });
   }
-  
+
   private final EventBus eventBus;
 }

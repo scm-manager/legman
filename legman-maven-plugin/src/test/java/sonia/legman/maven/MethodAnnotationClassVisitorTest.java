@@ -28,13 +28,10 @@ import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.io.Closeables;
 
-import org.junit.Test;
-
+import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
 
 import sonia.legman.maven.MethodAnnotationClassVisitor.Builder;
-
-import static org.junit.Assert.*;
 
 //~--- JDK imports ------------------------------------------------------------
 
@@ -46,44 +43,26 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  *
  * @author Sebastian Sdorra
  */
-public class MethodAnnotationClassVisitorTest
-{
+class MethodAnnotationClassVisitorTest {
 
-  /** Field description */
   private static final String CLASS = GuavaAnnotated.class.getName();
 
-  /** Field description */
   private static final String CLASSFILE =
     "target/test-classes/sonia/legman/maven/GuavaAnnotated.class";
 
-  /** Field description */
   private static final String METHOD_ONE = "methodOne";
-
-  /** Field description */
   private static final String METHOD_TWO = "methodTwo";
-
-  /** Field description */
-  private static final String ANNOTATION_TWO =
-    AllowConcurrentEvents.class.getName();
-
-  /** Field description */
+  private static final String ANNOTATION_TWO = AllowConcurrentEvents.class.getName();
   private static final String ANNOTATION_ONE = Subscribe.class.getName();
 
-  //~--- methods --------------------------------------------------------------
-
-  /**
-   * Method description
-   *
-   *
-   * @throws IOException
-   */
   @Test
-  public void testMethodAnnotationVisitor() throws IOException
-  {
+  void testMethodAnnotationVisitor() throws IOException {
     final List<AnnotatedMethod> list = Lists.newArrayList();
     Builder builder = MethodAnnotationClassVisitor.builder();
 
@@ -101,99 +80,55 @@ public class MethodAnnotationClassVisitorTest
 
     InputStream stream = null;
 
-    try
-    {
-      stream = new FileInputStream(new File(CLASSFILE));
+    try {
+      stream = new FileInputStream(CLASSFILE);
 
       ClassReader reader = new ClassReader(stream);
 
       reader.accept(builder.build(), 0);
-    }
-    finally
-    {
+    } finally {
       Closeables.close(stream, true);
     }
 
-    //J-
     AnnotatedMethod[] sorted = Ordering.natural()
-      .immutableSortedCopy(list).toArray(new AnnotatedMethod[0]);
+            .immutableSortedCopy(list)
+            .toArray(new AnnotatedMethod[0]);
 
-    assertArrayEquals(sorted, new AnnotatedMethod[] {
+    assertThat(sorted).containsExactly(
       new AnnotatedMethod(CLASS, METHOD_ONE, ANNOTATION_ONE),
       new AnnotatedMethod(CLASS, METHOD_TWO, ANNOTATION_TWO),
-      new AnnotatedMethod(CLASS, METHOD_TWO, ANNOTATION_ONE) 
-    });
-    //J+
+      new AnnotatedMethod(CLASS, METHOD_TWO, ANNOTATION_ONE)
+    );
   }
 
-  //~--- inner classes --------------------------------------------------------
+  private static class AnnotatedMethod implements Comparable<AnnotatedMethod> {
 
-  /**
-   * Class description
-   *
-   *
-   * @version        Enter version here..., 14/01/11
-   * @author         Enter your name here...
-   */
-  private static class AnnotatedMethod implements Comparable<AnnotatedMethod>
-  {
+    private final String className;
+    private final String methodName;
+    private final String annotationName;
 
-    /**
-     * Constructs ...
-     *
-     *
-     * @param className
-     * @param methodName
-     * @param annotationName
-     */
-    public AnnotatedMethod(String className, String methodName,
-      String annotationName)
-    {
+    public AnnotatedMethod(String className, String methodName, String annotationName) {
       this.className = className;
       this.methodName = methodName;
       this.annotationName = annotationName;
     }
 
-    //~--- methods ------------------------------------------------------------
-
-    /**
-     * Method description
-     *
-     *
-     * @param o
-     *
-     * @return
-     */
     @Override
-    public int compareTo(AnnotatedMethod o)
-    {
-      //J-
+    public int compareTo(AnnotatedMethod o) {
       return ComparisonChain.start()
         .compare(className,o.className)
         .compare(methodName, o.methodName)
         .compare(annotationName, o.annotationName)
         .result();
-      //J+
     }
 
-    /**
-     * Method description
-     *
-     *
-     * @param obj
-     *
-     * @return
-     */
     @Override
-    public boolean equals(Object obj)
-    {
-      if (obj == null)
-      {
+    public boolean equals(Object obj) {
+      if (obj == null) {
         return false;
       }
 
-      if (getClass() != obj.getClass())
-      {
+      if (getClass() != obj.getClass()) {
         return false;
       }
 
@@ -204,45 +139,19 @@ public class MethodAnnotationClassVisitorTest
         && Objects.equals(annotationName, other.annotationName);
     }
 
-    /**
-     * Method description
-     *
-     *
-     * @return
-     */
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
       return Objects.hash(className, methodName, annotationName);
     }
 
-    /**
-     * Method description
-     *
-     *
-     * @return
-     */
     @Override
-    public String toString()
-    {
-      //J-
+    public String toString() {
       return MoreObjects.toStringHelper(this)
                     .addValue(className)
                     .addValue(methodName)
                     .addValue(annotationName)
                     .toString();
-      //J+
     }
 
-    //~--- fields -------------------------------------------------------------
-
-    /** Field description */
-    private final String annotationName;
-
-    /** Field description */
-    private final String className;
-
-    /** Field description */
-    private final String methodName;
   }
 }

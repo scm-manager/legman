@@ -33,20 +33,16 @@ import org.slf4j.LoggerFactory;
  * @author Sebastian Sdorra
  * @since 1.0.0
  */
-public class ShiroExecutorDecoratorFactory implements ExecutorDecoratorFactory
-{
+public class ShiroExecutorDecoratorFactory implements ExecutorDecoratorFactory {
 
   /**
    * the logger for ShiroExecutorDecoratorFactory
    */
-  private static final Logger logger = LoggerFactory.getLogger(
-    ShiroExecutorDecoratorFactory.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ShiroExecutorDecoratorFactory.class);
 
   @Override
-  public Executor decorate(Executor executor)
-  {
-    logger.debug(
-      "register {} as {} for legman",
+  public Executor decorate(Executor executor) {
+    LOG.debug("register {} as {} for legman",
       ShiroExecutorDecoratorFactory.class,
       ExecutorDecoratorFactory.class
     );

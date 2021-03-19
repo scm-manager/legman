@@ -20,45 +20,55 @@ package com.github.legman.shiro;
 import com.github.legman.EventBus;
 import com.github.legman.Subscribe;
 import org.apache.shiro.SecurityUtils;
-import org.junit.Test;
-import static org.junit.Assert.*;
-import org.junit.Rule;
-import sonia.junit.shiro.ShiroRule;
-import sonia.junit.shiro.SubjectAware;
+import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.config.IniSecurityManagerFactory;
+import org.apache.shiro.util.ThreadContext;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  *
  * @author Sebastian Sdorra
  */
-@SubjectAware(configuration = "classpath:com/github/legman/shiro/001.ini")
-public class ShiroExecutorDecoratorFactoryTest
-{
+class ShiroExecutorDecoratorFactoryTest {
+
+  @BeforeEach
+  void setUpShiro() {
+    IniSecurityManagerFactory securityManagerFactory = new IniSecurityManagerFactory("classpath:com/github/legman/shiro/001.ini");
+    ThreadContext.bind(securityManagerFactory.createInstance());
+  }
+
+  @AfterEach
+  void tearDownShiro() {
+    ThreadContext.unbindSubject();
+    ThreadContext.unbindSecurityManager();
+  }
 
   @Test
-  @SubjectAware(username = "trillian", password = "secret")
-  public void testSubjectAware() throws InterruptedException
-  {
+  void testSubjectAware() throws InterruptedException {
+    SecurityUtils.getSubject().login(new UsernamePasswordToken("trillian", "secret"));
+
     EventBus bus = new EventBus();
     Listener listener = new Listener();
     bus.register(listener);
     bus.post("event");
-    
+
     // wait until async event is dispatched
     Thread.sleep(500l);
-    assertEquals("trillian", listener.principal);
+    assertThat(listener.principal).isEqualTo("trillian");
   }
-  
+
   private static class Listener {
-    
+
     private Object principal;
-    
+
     @Subscribe
     public void handleEvent(String event){
       principal = SecurityUtils.getSubject().getPrincipal();
     }
-    
+
   }
-  
-  @Rule
-  public ShiroRule rule = new ShiroRule();
 }
