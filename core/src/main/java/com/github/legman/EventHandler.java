@@ -46,16 +46,15 @@ class EventHandler {
 
   /** Object sporting the handler method. */
   private final Object target;
-  
+
   private final WeakReference<Object> targetReference;
-  
+
   /** Handler method. */
   private final Method method;
 
   /** Event should be handled asynchronous. */
   private final boolean async;
-  
-  
+
   private final EventBus eventBus;
 
   /**
@@ -93,55 +92,34 @@ class EventHandler {
    *     {@link Throwable} that is not an {@link Error} ({@code Error} instances are
    *     propagated as-is).
    */
-  public void handleEvent(Object event) throws InvocationTargetException {
+  public void handleEvent(final Object event) throws InvocationTargetException {
     checkNotNull(event);
     Object t = getTarget();
     if ( t != null ){
-      try {
-        method.invoke(t, new Object[] { event });
-      } catch (IllegalArgumentException e) {
-        throw new Error("Method rejected target/argument: " + event, e);
-      } catch (IllegalAccessException e) {
-        throw new Error("Method became inaccessible: " + event, e);
-      } catch (InvocationTargetException e) {
-        if (e.getCause() instanceof Error) {
-          throw (Error) e.getCause();
-        }
-        throw e;
-      }
+      InvocationContext context = new InvocationContext(
+        eventBus.getInvocationInterceptors(),
+        method, t, event, async
+      );
+      context.proceed();
     } else {
       eventBus.removeEventHandler(this);
     }
   }
-  
+
   /**
-   * Returns target object or null if the event handler uses a weak reference 
+   * Returns target object or null if the event handler uses a weak reference
    * and the object is no longer available.
-   * 
+   *
    * @return target object
-   * 
+   *
    * @since 1.3.0
    */
-  Object getTarget()
-  {
+  Object getTarget() {
     Object t = target;
     if (t == null){
       t = targetReference.get();
     }
     return t;
-  }
-    
-
-  /**
-   * Returns true if the event should be handled asynchronous.
-   * 
-   * @return true if the event is handled async.
-   *
-   * @deprecated because of typo in the method name, use {@link #isAsync()} instead
-   */
-  @Deprecated
-  public boolean isAsnyc() {
-    return isAsync();
   }
 
   /**

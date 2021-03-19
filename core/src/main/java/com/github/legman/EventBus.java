@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -169,6 +170,9 @@ public class EventBus {
   /** executor for handling asynchronous events */
   private final Executor executor;
 
+  /** list of invocation interceptors **/
+  private final List<InvocationInterceptor> invocationInterceptors;
+
   /** the queue of asynchronous events is shared across all threads */
   private final ConcurrentLinkedQueue<EventWithHandler> asyncEventsToDispatch =
           new ConcurrentLinkedQueue<>();
@@ -198,7 +202,7 @@ public class EventBus {
   private EventBus(Builder builder) {
     this.identifier = builder.identifier;
     this.executor = createExecutor(builder);
-
+    this.invocationInterceptors = Collections.unmodifiableList(builder.invocationInterceptors);
     this.finder = new AnnotatedHandlerFinder();
   }
 
@@ -500,6 +504,15 @@ public class EventBus {
     }
   }
 
+  /**
+   * Returns the list of interceptors.
+   * @return list of interceptors
+   * @since 2.0.0
+   */
+  List<InvocationInterceptor> getInvocationInterceptors() {
+    return invocationInterceptors;
+  }
+
   /** simple struct representing an event and it's handler */
   static class EventWithHandler {
     final Object event;
@@ -515,6 +528,7 @@ public class EventBus {
     private final String identifier;
     private Executor executor;
     private final List<ExecutorDecoratorFactory> executorDecoratorFactories = new ArrayList<>();
+    private final List<InvocationInterceptor> invocationInterceptors = new ArrayList<>();
 
     private Builder(String identifier) {
       this.identifier = identifier;
@@ -527,6 +541,11 @@ public class EventBus {
 
     public Builder withExecutorDecoratorFactory(ExecutorDecoratorFactory executorDecoratorFactory) {
       this.executorDecoratorFactories.add(executorDecoratorFactory);
+      return this;
+    }
+
+    public Builder withInvocationInterceptor(InvocationInterceptor invocationInterceptor) {
+      this.invocationInterceptors.add(invocationInterceptor);
       return this;
     }
 
