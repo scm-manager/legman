@@ -30,7 +30,7 @@ import java.util.List;
  *
  * @since 2.0.0
  */
-public class MicrometerPlugin implements Plugin {
+public final class MicrometerPlugin implements Plugin {
 
   private final MeterRegistry registry;
   private final List<Tag> invocationTags = new ArrayList<>();

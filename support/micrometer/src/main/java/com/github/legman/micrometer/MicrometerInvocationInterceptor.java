@@ -45,8 +45,8 @@ public class MicrometerInvocationInterceptor implements InvocationInterceptor {
     String exception = "none";
     try {
       context.proceed();
-    } catch (Exception ex){
-      exception = ex.getClass().getName();
+    } catch (InvocationTargetException ex){
+      exception = ex.getCause().getClass().getName();
       throw ex;
     } finally {
       timer.stop(timer(context, exception));
@@ -60,6 +60,7 @@ public class MicrometerInvocationInterceptor implements InvocationInterceptor {
             .tag("event", context.getEvent().getClass().getName())
             .tag("target", createTarget(context))
             .tag("exception", exception)
+            .tag("async", String.valueOf(context.isAsynchronous()))
             .tags(tags)
             .register(registry);
   }

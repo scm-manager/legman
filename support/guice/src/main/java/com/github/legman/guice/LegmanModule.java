@@ -51,21 +51,15 @@ public class LegmanModule extends AbstractModule {
   @Override
   protected void configure() {
     bindListener(Matchers.any(), new TypeListener() {
-
       @Override
       public <I> void hear(TypeLiteral<I> type, TypeEncounter<I> encounter) {
-        encounter.register(new InjectionListener<I>() {
-
-          @Override
-          public void afterInjection(I injectee) {
-            if (LOG.isTraceEnabled()) {
-              LOG.trace("register subscriber {}", injectee.getClass());
-            }
-            eventBus.register(injectee);
+        encounter.register((InjectionListener<I>) injectee -> {
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("register subscriber {}", injectee.getClass());
           }
+          eventBus.register(injectee);
         });
       }
-
     });
   }
 
