@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2007 The Guava Authors and Sebastian Sdorra
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 package com.github.legman.micrometer;
 
 import com.github.legman.ExecutorDecoratorFactory;
@@ -15,14 +32,10 @@ public class MicrometerExecutorDecoratorFactory implements ExecutorDecoratorFact
   private static final Logger LOG = LoggerFactory.getLogger(MicrometerExecutorDecoratorFactory.class);
 
   private final MeterRegistry registry;
-  private final String executorServiceName;
-  private final String metricPrefix;
   private final Iterable<Tag> tags;
 
-  public MicrometerExecutorDecoratorFactory(MeterRegistry registry, String executorServiceName, String metricPrefix, Iterable<Tag> tags) {
+  MicrometerExecutorDecoratorFactory(MeterRegistry registry, Iterable<Tag> tags) {
     this.registry = registry;
-    this.executorServiceName = executorServiceName;
-    this.metricPrefix = metricPrefix;
     this.tags = tags;
   }
 
@@ -31,7 +44,7 @@ public class MicrometerExecutorDecoratorFactory implements ExecutorDecoratorFact
     if (executor instanceof ExecutorService) {
       LOG.trace("collect metrics for executor service");
       new ExecutorServiceMetrics(
-        (ExecutorService)executor, executorServiceName, metricPrefix, tags
+        (ExecutorService)executor, "legman", tags
       ).bindTo(registry);
     } else {
       LOG.warn("could only collect metrics for instances of ExecutorService and not for {}", executor.getClass());

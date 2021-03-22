@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.github.legman.support</groupId>
+    <artifactId>support</artifactId>
+    <version>1.6.3-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>micrometer</artifactId>
+  <version>1.6.3-SNAPSHOT</version>
+  <name>micrometer</name>
+
+  <dependencies>
+
+    <dependency>
+      <groupId>com.github.legman</groupId>
+      <artifactId>core</artifactId>
+      <version>1.6.3-SNAPSHOT</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-core</artifactId>
+      <version>1.6.5</version>
+    </dependency>
+
+  </dependencies>
+
+</project>

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-
-
 package com.github.legman.shiro;
 
 import com.github.legman.ExecutorDecoratorFactory;
@@ -33,11 +31,8 @@ import org.slf4j.LoggerFactory;
  * @author Sebastian Sdorra
  * @since 1.0.0
  */
-public class ShiroExecutorDecoratorFactory implements ExecutorDecoratorFactory {
+class ShiroExecutorDecoratorFactory implements ExecutorDecoratorFactory {
 
-  /**
-   * the logger for ShiroExecutorDecoratorFactory
-   */
   private static final Logger LOG = LoggerFactory.getLogger(ShiroExecutorDecoratorFactory.class);
 
   @Override

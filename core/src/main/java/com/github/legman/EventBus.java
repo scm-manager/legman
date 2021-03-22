@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -539,13 +540,20 @@ public class EventBus {
       return this;
     }
 
-    public Builder withExecutorDecoratorFactory(ExecutorDecoratorFactory executorDecoratorFactory) {
-      this.executorDecoratorFactories.add(executorDecoratorFactory);
+    public Builder withExecutorDecoratorFactories(ExecutorDecoratorFactory... executorDecoratorFactories) {
+      this.executorDecoratorFactories.addAll(Arrays.asList(executorDecoratorFactories));
       return this;
     }
 
-    public Builder withInvocationInterceptor(InvocationInterceptor invocationInterceptor) {
-      this.invocationInterceptors.add(invocationInterceptor);
+    public Builder withInvocationInterceptors(InvocationInterceptor... invocationInterceptors) {
+      this.invocationInterceptors.addAll(Arrays.asList(invocationInterceptors));
+      return this;
+    }
+
+    public Builder withPlugins(Plugin... plugins) {
+      for (Plugin plugin : plugins) {
+        plugin.apply(this);
+      }
       return this;
     }
 
