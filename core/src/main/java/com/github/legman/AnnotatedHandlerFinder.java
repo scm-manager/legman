@@ -31,6 +31,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -47,12 +48,13 @@ public class AnnotatedHandlerFinder {
    * all super-classes, that are annotated with {@code @Subscribe}. This cache is not shared between instances in order
    * to avoid class loader leaks, in environments where classes will be load dynamically.
    */
+  @SuppressWarnings("UnstableApiUsage")
   private final LoadingCache<Class<?>, ImmutableList<EventMetadata>> handlerMethodsCache =
       CacheBuilder.newBuilder()
           .weakKeys()
           .build(new CacheLoader<Class<?>, ImmutableList<EventMetadata>>() {
             @Override
-            public ImmutableList<EventMetadata> load(Class<?> concreteClass) throws Exception {
+            public ImmutableList<EventMetadata> load(@Nonnull Class<?> concreteClass) {
               return getMetadataInternal(concreteClass);
             }
           });
@@ -81,6 +83,7 @@ public class AnnotatedHandlerFinder {
     return methodsInListener;
   }
 
+  @SuppressWarnings("UnstableApiUsage")
   private ImmutableList<EventMetadata> getEventMetadata(Class<?> clazz) {
     try {
       return handlerMethodsCache.getUnchecked(clazz);
@@ -113,6 +116,7 @@ public class AnnotatedHandlerFinder {
     }
   }
 
+  @SuppressWarnings("UnstableApiUsage")
   private static ImmutableList<EventMetadata> getMetadataInternal(Class<?> clazz) {
     Set<? extends Class<?>> supers = TypeToken.of(clazz).getTypes().rawTypes();
     Map<MethodIdentifier, EventMetadata> identifiers = Maps.newHashMap();
@@ -128,24 +132,19 @@ public class AnnotatedHandlerFinder {
           }
 
           MethodIdentifier ident = new MethodIdentifier(superClazzMethod);
-          if (!identifiers.containsKey(ident)) {
-            identifiers.put(ident,
-              new EventMetadata(
-                superClazzMethod,
-                subscribe.referenceType(),
-                subscribe.allowConcurrentAccess(),
-                subscribe.async()
-              )
-            );
-          }
+          identifiers.computeIfAbsent(ident, key -> new EventMetadata(
+            superClazzMethod,
+            subscribe.referenceType(),
+            subscribe.allowConcurrentAccess(),
+            subscribe.async()
+          ));
         }
       }
     }
     return ImmutableList.copyOf(identifiers.values());
   }
 
-  private static Subscribe getSubscribeAnnotation(Method method)
-  {
+  private static Subscribe getSubscribeAnnotation(Method method) {
     Subscribe subscribe = null;
     for (Annotation annotation : method.getDeclaredAnnotations()){
       if (annotation instanceof Subscribe){
@@ -190,10 +189,10 @@ public class AnnotatedHandlerFinder {
 
   private static class EventMetadata {
 
-    private Method method;
-    private ReferenceType referenceType;
-    private boolean allowConcurrentAccess;
-    private boolean async;
+    private final Method method;
+    private final ReferenceType referenceType;
+    private final boolean allowConcurrentAccess;
+    private final boolean async;
 
     private EventMetadata(Method method, ReferenceType referenceType, boolean allowConcurrentAccess,  boolean async) {
       this.method = method;

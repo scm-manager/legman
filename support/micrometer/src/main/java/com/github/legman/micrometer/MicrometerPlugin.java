@@ -25,21 +25,43 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Legman plugin to collect metrics about the event bus with Micrometer.
+ *
+ * @since 2.0.0
+ */
 public class MicrometerPlugin implements Plugin {
 
   private final MeterRegistry registry;
   private final List<Tag> invocationTags = new ArrayList<>();
   private final List<Tag> executorTags = new ArrayList<>();
 
+  /**
+   * Creates a new instance of the {@link MicrometerPlugin}.
+   *
+   * @param registry registry which used to collect metrics
+   */
   public MicrometerPlugin(MeterRegistry registry) {
     this.registry = registry;
   }
 
+  /**
+   * Extra tags which are added to the invocation metrics.
+   *
+   * @param tags list of extra tags
+   * @return {@code this}
+   */
   public MicrometerPlugin withInvocationTags(Tag... tags) {
     invocationTags.addAll(Arrays.asList(tags));
     return this;
   }
 
+  /**
+   * Extra tag which are added to the in executor service metrics.
+   *
+   * @param tags list of extra tags
+   * @return {@code this}
+   */
   public MicrometerPlugin withExecutorTags(Tag... tags) {
     executorTags.addAll(Arrays.asList(tags));
     return this;

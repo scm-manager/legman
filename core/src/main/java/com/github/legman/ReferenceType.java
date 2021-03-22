@@ -18,11 +18,11 @@
 package com.github.legman;
 
 /**
+ * Type of subscriber reference.
  *
  * @author Sebastian Sdorra
  * @since 1.0.0
  */
-public enum ReferenceType
-{
-  WEAK, STRONG;
+public enum ReferenceType {
+  WEAK, STRONG
 }

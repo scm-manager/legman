@@ -30,6 +30,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -116,13 +117,14 @@ public class EventBus {
    * A thread-safe cache for flattenHierarchy(). The Class class is immutable. This cache is not shared between
    * instances in order to avoid class loader leaks, in environments where classes will be load dynamically.
    */
+  @SuppressWarnings("UnstableApiUsage")
   private final LoadingCache<Class<?>, Set<Class<?>>> flattenHierarchyCache =
       CacheBuilder.newBuilder()
           .weakKeys()
           .build(new CacheLoader<Class<?>, Set<Class<?>>>() {
             @SuppressWarnings({"unchecked", "rawtypes"}) // safe cast
             @Override
-            public Set<Class<?>> load(Class<?> concreteClass) {
+            public Set<Class<?>> load(@Nonnull Class<?> concreteClass) {
               return (Set) TypeToken.of(concreteClass).getTypes().rawTypes();
             }
           });
@@ -134,8 +136,8 @@ public class EventBus {
    * made after acquiring a read or write lock via {@link #handlersByTypeLock}.
    */
   @VisibleForTesting
-  final SetMultimap<Class<?>, EventHandler> handlersByType =
-      HashMultimap.create();
+  final SetMultimap<Class<?>, EventHandler> handlersByType = HashMultimap.create();
+
   private final ReadWriteLock handlersByTypeLock = new ReentrantReadWriteLock();
 
   /**
@@ -150,20 +152,10 @@ public class EventBus {
   private final AnnotatedHandlerFinder finder;
 
   /** queues of events for the current thread to dispatch */
-  private final ThreadLocal<Queue<EventWithHandler>> eventsToDispatch =
-      new ThreadLocal<Queue<EventWithHandler>>() {
-    @Override protected Queue<EventWithHandler> initialValue() {
-      return new LinkedList<>();
-    }
-  };
+  private final ThreadLocal<Queue<EventWithHandler>> eventsToDispatch = ThreadLocal.withInitial(LinkedList::new);
 
   /** true if the current thread is currently dispatching an event */
-  private final ThreadLocal<Boolean> isDispatching =
-      new ThreadLocal<Boolean>() {
-    @Override protected Boolean initialValue() {
-      return false;
-    }
-  };
+  private final ThreadLocal<Boolean> isDispatching = ThreadLocal.withInitial(() -> false);
 
   /** identifier of the event bus */
   private final String identifier;
@@ -187,7 +179,7 @@ public class EventBus {
    * Creates a new EventBus named "default".
    */
   public EventBus() {
-    this(new Builder(DEFAULT_NAME));
+    this(new Builder());
   }
 
   /**
@@ -197,7 +189,7 @@ public class EventBus {
    *                    be a valid Java identifier.
    */
   public EventBus(String identifier) {
-    this(new Builder(identifier));
+    this(new Builder().withIdentifier(identifier));
   }
 
   private EventBus(Builder builder) {
@@ -449,12 +441,7 @@ public class EventBus {
     }
 
     if ( wrapper.isAsync() ){
-      executor.execute(new Runnable() {
-        @Override
-        public void run() {
-          dispatchSynchronous(event, wrapper);
-        }
-      });
+      executor.execute(() -> dispatchSynchronous(event, wrapper));
     } else {
       dispatchSynchronous(event, wrapper);
     }
@@ -486,6 +473,7 @@ public class EventBus {
    * @return {@code clazz}'s complete type hierarchy, flattened and uniqued.
    */
   @VisibleForTesting
+  @SuppressWarnings("UnstableApiUsage")
   Set<Class<?>> flattenHierarchy(Class<?> concreteClass) {
     try {
       return flattenHierarchyCache.getUnchecked(concreteClass);
@@ -524,32 +512,80 @@ public class EventBus {
     }
   }
 
+  /**
+   * Returns builder for the event bus.
+   *
+   * @return builder
+   * @since 2.0.0
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /**
+   * Builder for the event bus.
+   * @since 2.0.0
+   */
   public static class Builder {
 
-    private final String identifier;
+    private String identifier = DEFAULT_NAME;
     private Executor executor;
     private final List<ExecutorDecoratorFactory> executorDecoratorFactories = new ArrayList<>();
     private final List<InvocationInterceptor> invocationInterceptors = new ArrayList<>();
 
-    private Builder(String identifier) {
-      this.identifier = identifier;
+    private Builder() {
     }
 
+    /**
+     * Sets the identifier for the eventbus.
+     *
+     * @param identifier identifier
+     * @return {@code this}
+     */
+    public Builder withIdentifier(String identifier) {
+      this.identifier = identifier;
+      return this;
+    }
+
+    /**
+     * Sets the {@link Executor} which is used for asynchronous event processing.
+     *
+     * @param executor executor for asynchronous event processing
+     * @return {@code this}
+     */
     public Builder withExecutor(Executor executor) {
       this.executor = executor;
       return this;
     }
 
+    /**
+     * Decorate the used executor.
+     *
+     * @param executorDecoratorFactories list of decorator factories
+     * @return {@code this}
+     */
     public Builder withExecutorDecoratorFactories(ExecutorDecoratorFactory... executorDecoratorFactories) {
       this.executorDecoratorFactories.addAll(Arrays.asList(executorDecoratorFactories));
       return this;
     }
 
+    /**
+     * Intercept subscriber invocations.
+     *
+     * @param invocationInterceptors list of interceptors
+     * @return {@code this}
+     */
     public Builder withInvocationInterceptors(InvocationInterceptor... invocationInterceptors) {
       this.invocationInterceptors.addAll(Arrays.asList(invocationInterceptors));
       return this;
     }
 
+    /**
+     * Apply the list of plugins to eventbus.
+     *
+     * @param plugins list of plugins
+     * @return {@code this}
+     */
     public Builder withPlugins(Plugin... plugins) {
       for (Plugin plugin : plugins) {
         plugin.apply(this);
@@ -557,6 +593,11 @@ public class EventBus {
       return this;
     }
 
+    /**
+     * Creates the instance of the {@link EventBus}.
+     *
+     * @return new instance
+     */
     public EventBus build() {
       return new EventBus(this);
     }

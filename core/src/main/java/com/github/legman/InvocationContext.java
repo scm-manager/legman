@@ -4,7 +4,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 
-public class InvocationContext {
+/**
+ * Context object for {@link InvocationInterceptor}.
+ *
+ * @since 2.0.0
+ */
+public final class InvocationContext {
 
   private final Iterator<InvocationInterceptor> interceptors;
   private final String eventBusIdentifier;
@@ -22,26 +27,56 @@ public class InvocationContext {
     this.asynchronous = asynchronous;
   }
 
+  /**
+   * Returns the identifier of the event bus.
+   *
+   * @return eventbus identifier
+   */
   public String getEventBusIdentifier() {
     return eventBusIdentifier;
   }
 
+  /**
+   * Returns the subscriber method which will be invoked.
+   *
+   * @return subscriber method
+   */
   public Method getMethod() {
     return method;
   }
 
+  /**
+   * Returns the subscriber object on which the method will be invoked.
+   *
+   * @return subscriber object
+   */
   public Object getTarget() {
     return target;
   }
 
+  /**
+   * Returns the event object which will be passed to the subscriber method.
+   *
+   * @return event object
+   */
   public Object getEvent() {
     return event;
   }
 
+  /**
+   * Returns {@code true} if the event is processed asynchronous.
+   *
+   * @return {@code true} if the event is processed asynchronous
+   */
   public boolean isAsynchronous() {
     return asynchronous;
   }
 
+  /**
+   * Calls the next interceptor in the chain or invoke the subscriber method.
+   *
+   * @throws InvocationTargetException is thrown if subscriber could not be invoked
+   */
   public void proceed() throws InvocationTargetException {
     if (interceptors.hasNext()) {
       InvocationInterceptor interceptor = interceptors.next();
@@ -51,6 +86,7 @@ public class InvocationContext {
     }
   }
 
+  @SuppressWarnings("java:S112")
   private void invoke() throws InvocationTargetException {
     try {
       method.invoke(target, event);

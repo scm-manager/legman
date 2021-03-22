@@ -66,6 +66,7 @@ class EventHandler {
    * @param referenceType type of the reference
    * @param async true if the event should be handled async
    */
+  @SuppressWarnings("java:S3011")
   EventHandler(EventBus eventBus, Object target, Method method, ReferenceType referenceType, boolean async) {
     Preconditions.checkNotNull(eventBus, "eventbus cannot be null.");
     Preconditions.checkNotNull(target,
@@ -77,7 +78,7 @@ class EventHandler {
       this.targetReference = null;
     } else {
       this.target = null;
-      this.targetReference = new WeakReference<Object>(target);
+      this.targetReference = new WeakReference<>(target);
     }
     this.method = method;
     this.async = async;

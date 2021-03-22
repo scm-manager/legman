@@ -19,6 +19,11 @@ package com.github.legman.shiro;
 import com.github.legman.EventBus;
 import com.github.legman.Plugin;
 
+/**
+ * Legman plugin for Apache Shiro integration.
+ *
+ * @since 2.0.0
+ */
 public class ShiroPlugin implements Plugin {
   @Override
   public void apply(EventBus.Builder builder) {

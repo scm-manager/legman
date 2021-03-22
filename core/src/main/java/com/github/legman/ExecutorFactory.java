@@ -18,7 +18,13 @@ class ExecutorFactory {
   private ExecutorFactory() {
   }
 
-  public static Executor create(String identifier) {
+  /**
+   * Creates the default {@link Executor} for asynchronous event processing.
+   *
+   * @param identifier eventbus identifier
+   * @return default executor
+   */
+  static Executor create(String identifier) {
     return Executors.newFixedThreadPool(4, createThreadFactory(identifier));
   }
 

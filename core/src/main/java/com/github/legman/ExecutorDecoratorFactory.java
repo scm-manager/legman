@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-
-
 package com.github.legman;
-
-//~--- JDK imports ------------------------------------------------------------
 
 import java.util.concurrent.Executor;
 
@@ -29,15 +25,12 @@ import java.util.concurrent.Executor;
  * @author Sebastian Sdorra
  * @since 1.0.0
  */
-public interface ExecutorDecoratorFactory
-{
+public interface ExecutorDecoratorFactory {
 
   /**
    * Returns the decorated {@link Executor}.
    *
-   *
    * @param executor executor to decorate
-   *
    * @return decorated {@link Executor}
    */
   Executor decorate(Executor executor);

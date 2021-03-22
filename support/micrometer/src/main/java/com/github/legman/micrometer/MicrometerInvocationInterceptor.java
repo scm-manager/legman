@@ -24,6 +24,11 @@ import io.micrometer.core.instrument.Timer;
 
 import java.lang.reflect.InvocationTargetException;
 
+/**
+ * Collect metrics about subscriber invocations.
+ *
+ * @since 2.0.0
+ */
 public class MicrometerInvocationInterceptor implements InvocationInterceptor {
 
   private final MeterRegistry registry;

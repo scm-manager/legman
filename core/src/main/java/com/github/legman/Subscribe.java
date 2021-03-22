@@ -39,15 +39,14 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Subscribe
-{
+public @interface Subscribe {
   /**
    * Returns true if the event should be handled asynchronous.
    * The default is asynchronous.
    *
    * @return true if the event should be handled asynchronous.
    */
-  public boolean async() default true;
+  boolean async() default true;
 
   /**
    * Marks an event handling method as being thread-safe.  This attribute
@@ -56,7 +55,7 @@ public @interface Subscribe
    *
    * @return false if the annotated method is thread-safe
    */
-  public boolean allowConcurrentAccess() default false;
+  boolean allowConcurrentAccess() default false;
 
   /**
    * By default all references to message listeners are weak to eliminate the
@@ -64,5 +63,5 @@ public @interface Subscribe
    *
    * @return the reference type
    */
-  public ReferenceType referenceType() default ReferenceType.WEAK;
+  ReferenceType referenceType() default ReferenceType.WEAK;
 }

@@ -32,6 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Registers every bound object to a legman {@link EventBus}.
+ *
  * @author Sebastian Sdorra
  * @since 1.0.0
  */
@@ -40,7 +42,7 @@ public class LegmanModule extends AbstractModule {
   /**
    * the logger for LegmanModule
    */
-  private static final Logger logger = LoggerFactory.getLogger(LegmanModule.class);
+  private static final Logger LOG = LoggerFactory.getLogger(LegmanModule.class);
 
   public LegmanModule(EventBus eventBus) {
     this.eventBus = eventBus;
@@ -56,8 +58,8 @@ public class LegmanModule extends AbstractModule {
 
           @Override
           public void afterInjection(I injectee) {
-            if (logger.isTraceEnabled()) {
-              logger.trace("register subscriber {}", injectee.getClass());
+            if (LOG.isTraceEnabled()) {
+              LOG.trace("register subscriber {}", injectee.getClass());
             }
             eventBus.register(injectee);
           }

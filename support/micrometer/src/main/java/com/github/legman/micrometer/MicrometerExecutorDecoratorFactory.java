@@ -27,6 +27,11 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
+/**
+ * Collect metrics about the executor which is used to process asynchronous events.
+ *
+ * @since 2.0.0
+ */
 public class MicrometerExecutorDecoratorFactory implements ExecutorDecoratorFactory {
 
   private static final Logger LOG = LoggerFactory.getLogger(MicrometerExecutorDecoratorFactory.class);

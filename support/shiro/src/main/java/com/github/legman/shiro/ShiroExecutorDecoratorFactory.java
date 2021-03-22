@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Makes the legman executor aware of the shiro subject.
  *
  * @author Sebastian Sdorra
  * @since 1.0.0
