@@ -9,6 +9,11 @@
 * all options are controlled by attributes of the subscribe annotation
 * exceptions are propagated to caller (works only with synchronous dispatching)
 
+In addition, Legman comes with ready to use integrations:
+
+* [Apache Shiro](support/shiro/README.md)
+* [Google Guice](support/guice/README.md)
+* [Micrometer](support/micrometer/README.md)
 
 ## Maven
 
@@ -18,7 +23,7 @@
   <dependency>
     <groupId>com.github.legman</groupId>
     <artifactId>core</artifactId>
-    <version>1.2.0</version>
+    <version>2.0.0</version>
   </dependency>
 
 </dependencies>
@@ -26,9 +31,9 @@
 <repositories>
 
   <repository>
-    <id>maven.scm-manager.org</id>
-    <name>scm-manager release repository</name>
-    <url>http://maven.scm-manager.org/nexus/content/groups/public</url>
+    <id>packages.scm-manager.org</id>
+    <name>scm-manager repository</name>
+    <url>https://packages.scm-manager.org/repository/public/</url>
   </repository>
 
 </repositories>
