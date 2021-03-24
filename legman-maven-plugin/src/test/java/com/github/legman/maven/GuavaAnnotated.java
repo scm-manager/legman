@@ -14,14 +14,34 @@
  * limitations under the License.
  */
 
-package com.github.legman;
+
+
+package com.github.legman.maven;
+
+//~--- non-JDK imports --------------------------------------------------------
+
+import com.google.common.eventbus.AllowConcurrentEvents;
+import com.google.common.eventbus.Subscribe;
 
 /**
- * Type of subscriber reference.
  *
  * @author Sebastian Sdorra
- * @since 1.0.0
  */
-public enum ReferenceType {
-  WEAK, STRONG
+public class GuavaAnnotated
+{
+
+  /**
+   * Method description
+   *
+   */
+  @Subscribe
+  public void methodOne() {}
+
+  /**
+   * Method description
+   *
+   */
+  @Subscribe
+  @AllowConcurrentEvents
+  public void methodTwo() {}
 }

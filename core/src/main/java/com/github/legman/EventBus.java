@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 The Guava Authors and Sebastian Sdorra
+ * Copyright (C) 2007 The Guava Authors and SCM-Manager Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.github.legman;
 
-import com.github.legman.internal.ServiceLocator;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
@@ -31,9 +30,14 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
@@ -113,13 +117,14 @@ public class EventBus {
    * A thread-safe cache for flattenHierarchy(). The Class class is immutable. This cache is not shared between
    * instances in order to avoid class loader leaks, in environments where classes will be load dynamically.
    */
+  @SuppressWarnings("UnstableApiUsage")
   private final LoadingCache<Class<?>, Set<Class<?>>> flattenHierarchyCache =
       CacheBuilder.newBuilder()
           .weakKeys()
           .build(new CacheLoader<Class<?>, Set<Class<?>>>() {
             @SuppressWarnings({"unchecked", "rawtypes"}) // safe cast
             @Override
-            public Set<Class<?>> load(Class<?> concreteClass) {
+            public Set<Class<?>> load(@Nonnull Class<?> concreteClass) {
               return (Set) TypeToken.of(concreteClass).getTypes().rawTypes();
             }
           });
@@ -131,8 +136,8 @@ public class EventBus {
    * made after acquiring a read or write lock via {@link #handlersByTypeLock}.
    */
   @VisibleForTesting
-  final SetMultimap<Class<?>, EventHandler> handlersByType =
-      HashMultimap.create();
+  final SetMultimap<Class<?>, EventHandler> handlersByType = HashMultimap.create();
+
   private final ReadWriteLock handlersByTypeLock = new ReentrantReadWriteLock();
 
   /**
@@ -142,34 +147,24 @@ public class EventBus {
   private static final Logger logger = LoggerFactory.getLogger(EventBus.class);
 
   /**
-   * Strategy for finding handler methods in registered objects. The strategy is
-   * loaded with the {@link java.util.ServiceLoader}. The default strategy is the
-   * {@link AnnotatedHandlerFinder}.
+   * The {@link AnnotatedHandlerFinder} is suitable for finding subscribers.
    */
-  private final HandlerFindingStrategy finder =
-      ServiceLocator.locateOne(HandlerFindingStrategy.class, AnnotatedHandlerFinder.class);
+  private final AnnotatedHandlerFinder finder;
 
   /** queues of events for the current thread to dispatch */
-  private final ThreadLocal<Queue<EventWithHandler>> eventsToDispatch =
-      new ThreadLocal<Queue<EventWithHandler>>() {
-    @Override protected Queue<EventWithHandler> initialValue() {
-      return new LinkedList<>();
-    }
-  };
+  private final ThreadLocal<Queue<EventWithHandler>> eventsToDispatch = ThreadLocal.withInitial(LinkedList::new);
 
   /** true if the current thread is currently dispatching an event */
-  private final ThreadLocal<Boolean> isDispatching =
-      new ThreadLocal<Boolean>() {
-    @Override protected Boolean initialValue() {
-      return false;
-    }
-  };
+  private final ThreadLocal<Boolean> isDispatching = ThreadLocal.withInitial(() -> false);
 
   /** identifier of the event bus */
-  private String identifier;
+  private final String identifier;
 
   /** executor for handling asynchronous events */
-  private Executor executor;
+  private final Executor executor;
+
+  /** list of invocation interceptors **/
+  private final List<InvocationInterceptor> invocationInterceptors;
 
   /** the queue of asynchronous events is shared across all threads */
   private final ConcurrentLinkedQueue<EventWithHandler> asyncEventsToDispatch =
@@ -178,13 +173,13 @@ public class EventBus {
   /** name of the default event bus */
   static final String DEFAULT_NAME = "default";
 
-  private AtomicBoolean shutdown = new AtomicBoolean(false);
+  private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   /**
    * Creates a new EventBus named "default".
    */
   public EventBus() {
-    this(DEFAULT_NAME);
+    this(new Builder());
   }
 
   /**
@@ -193,19 +188,26 @@ public class EventBus {
    * @param identifier  a brief name for this bus, for logging purposes.  Should
    *                    be a valid Java identifier.
    */
-  public EventBus(final String identifier) {
-    this.identifier = identifier;
-    this.executor = createExecutor(identifier);
+  public EventBus(String identifier) {
+    this(new Builder().withIdentifier(identifier));
   }
 
-  private Executor createExecutor(String identifier) {
-    ExecutorFactory factory = ServiceLocator.locateOne(ExecutorFactory.class, DefaultExecutorFactory.class);
-    Executor e = factory.create(identifier);
-    Iterable<ExecutorDecoratorFactory> decorators = ServiceLocator.locate(ExecutorDecoratorFactory.class);
-    for (ExecutorDecoratorFactory decoratorFactory : decorators) {
-      e = decoratorFactory.decorate(e);
+  private EventBus(Builder builder) {
+    this.identifier = builder.identifier;
+    this.executor = createExecutor(builder);
+    this.invocationInterceptors = Collections.unmodifiableList(builder.invocationInterceptors);
+    this.finder = new AnnotatedHandlerFinder();
+  }
+
+  private static Executor createExecutor(Builder builder) {
+    Executor executor = builder.executor;
+    if (executor == null) {
+      executor = ExecutorFactory.create(builder.identifier);
     }
-    return e;
+    for (ExecutorDecoratorFactory executorDecoratorFactory : builder.executorDecoratorFactories) {
+      executor = executorDecoratorFactory.decorate(executor);
+    }
+    return executor;
   }
 
   /**
@@ -213,22 +215,18 @@ public class EventBus {
    *
    * @return identifier of EventBus.
    */
-  String getIdentifier()
-  {
+  String getIdentifier() {
     return identifier;
   }
 
   /**
    * Registers all handler methods on {@code object} to receive events.
-   * Handler methods are selected and classified using this EventBus's
-   * {@link HandlerFindingStrategy}; the default strategy is the
-   * {@link AnnotatedHandlerFinder}.
+   * Handler methods are selected and classified using {@link AnnotatedHandlerFinder}.
    *
    * @param object  object whose handler methods should be registered.
    */
   public void register(Object object) {
-    Multimap<Class<?>, EventHandler> methodsInListener =
-        finder.findAllHandlers(this, object);
+    Multimap<Class<?>, EventHandler> methodsInListener = finder.findAllHandlers(this, object);
     handlersByTypeLock.writeLock().lock();
     try {
       handlersByType.putAll(methodsInListener);
@@ -392,8 +390,7 @@ public class EventBus {
    * Dispatch {@code events} in the order they were posted, regardless of
    * the posting thread.
    */
-  @SuppressWarnings("deprecation") // only deprecated for external subclasses
-  protected void dispatchAsynchronousQueuedEvents() {
+  private void dispatchAsynchronousQueuedEvents() {
     while (true) {
       EventWithHandler eventWithHandler = asyncEventsToDispatch.poll();
       if (eventWithHandler == null) {
@@ -444,12 +441,7 @@ public class EventBus {
     }
 
     if ( wrapper.isAsync() ){
-      executor.execute(new Runnable() {
-        @Override
-        public void run() {
-          dispatchSynchronous(event, wrapper);
-        }
-      });
+      executor.execute(() -> dispatchSynchronous(event, wrapper));
     } else {
       dispatchSynchronous(event, wrapper);
     }
@@ -481,6 +473,7 @@ public class EventBus {
    * @return {@code clazz}'s complete type hierarchy, flattened and uniqued.
    */
   @VisibleForTesting
+  @SuppressWarnings("UnstableApiUsage")
   Set<Class<?>> flattenHierarchy(Class<?> concreteClass) {
     try {
       return flattenHierarchyCache.getUnchecked(concreteClass);
@@ -500,6 +493,15 @@ public class EventBus {
     }
   }
 
+  /**
+   * Returns the list of interceptors.
+   * @return list of interceptors
+   * @since 2.0.0
+   */
+  List<InvocationInterceptor> getInvocationInterceptors() {
+    return invocationInterceptors;
+  }
+
   /** simple struct representing an event and it's handler */
   static class EventWithHandler {
     final Object event;
@@ -507,6 +509,97 @@ public class EventBus {
     public EventWithHandler(Object event, EventHandler handler) {
       this.event = checkNotNull(event);
       this.handler = checkNotNull(handler);
+    }
+  }
+
+  /**
+   * Returns builder for the event bus.
+   *
+   * @return builder
+   * @since 2.0.0
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  /**
+   * Builder for the event bus.
+   * @since 2.0.0
+   */
+  public static class Builder {
+
+    private String identifier = DEFAULT_NAME;
+    private Executor executor;
+    private final List<ExecutorDecoratorFactory> executorDecoratorFactories = new ArrayList<>();
+    private final List<InvocationInterceptor> invocationInterceptors = new ArrayList<>();
+
+    private Builder() {
+    }
+
+    /**
+     * Sets the identifier for the eventbus.
+     *
+     * @param identifier identifier
+     * @return {@code this}
+     */
+    public Builder withIdentifier(String identifier) {
+      this.identifier = identifier;
+      return this;
+    }
+
+    /**
+     * Sets the {@link Executor} which is used for asynchronous event processing.
+     *
+     * @param executor executor for asynchronous event processing
+     * @return {@code this}
+     */
+    public Builder withExecutor(Executor executor) {
+      this.executor = executor;
+      return this;
+    }
+
+    /**
+     * Decorate the used executor.
+     *
+     * @param executorDecoratorFactories list of decorator factories
+     * @return {@code this}
+     */
+    public Builder withExecutorDecoratorFactories(ExecutorDecoratorFactory... executorDecoratorFactories) {
+      this.executorDecoratorFactories.addAll(Arrays.asList(executorDecoratorFactories));
+      return this;
+    }
+
+    /**
+     * Intercept subscriber invocations.
+     *
+     * @param invocationInterceptors list of interceptors
+     * @return {@code this}
+     */
+    public Builder withInvocationInterceptors(InvocationInterceptor... invocationInterceptors) {
+      this.invocationInterceptors.addAll(Arrays.asList(invocationInterceptors));
+      return this;
+    }
+
+    /**
+     * Apply the list of plugins to eventbus.
+     *
+     * @param plugins list of plugins
+     * @return {@code this}
+     */
+    public Builder withPlugins(Plugin... plugins) {
+      for (Plugin plugin : plugins) {
+        plugin.apply(this);
+      }
+      return this;
+    }
+
+    /**
+     * Creates the instance of the {@link EventBus}.
+     *
+     * @return new instance
+     */
+    public EventBus build() {
+      return new EventBus(this);
     }
   }
 }

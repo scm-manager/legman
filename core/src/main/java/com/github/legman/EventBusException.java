@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Sebastian Sdorra
+ * Copyright (C) 2013 SCM-Manager Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,10 @@ package com.github.legman;
  * @author Sebastian Sdorra
  * @since 1.2.0
  */
-public class EventBusException extends RuntimeException
-{
+public class EventBusException extends RuntimeException {
+
+  @SuppressWarnings("java:S1948")
+  private final Object event;
 
   /**
    * Constructs new {@link EventBusException}.
@@ -35,13 +37,10 @@ public class EventBusException extends RuntimeException
    * @param message exception message
    * @param cause cause of the exception
    */
-  public EventBusException(Object event, String message, Throwable cause)
-  {
+  public EventBusException(Object event, String message, Throwable cause) {
     super(message, cause);
     this.event = event;
   }
-
-  //~--- get methods ----------------------------------------------------------
 
   /**
    * Returns the event, which could not be dispatched.
@@ -49,13 +48,7 @@ public class EventBusException extends RuntimeException
    *
    * @return event
    */
-  public Object getEvent()
-  {
+  public Object getEvent() {
     return event;
   }
-
-  //~--- fields ---------------------------------------------------------------
-
-  /** event */
-  private final Object event;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Sebastian Sdorra
+ * Copyright (C) 2013 SCM-Manager Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,134 +16,133 @@
 
 package com.github.legman;
 
-import java.io.IOException;
-import org.junit.Test;
+import org.assertj.guava.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
+import java.io.IOException;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 
 /**
- *
  * @author Sebastian Sdorra
  */
-public class EventBusTest
-{
-  
+class EventBusTest {
+
   private String weakReferenceTest;
-  
+
   private String strongReferenceTest;
-  
+
   @Test
-  public void testWeakReference() throws InterruptedException
-  {
+  void testWeakReference() {
     EventBus bus = new EventBus();
     bus.register(new WeakListener());
-    assertEquals(1, bus.handlersByType.size());
+    Assertions.assertThat(bus.handlersByType).hasSize(1);
+
     System.gc();
+
     bus.post("event");
-    assertNull(weakReferenceTest);
-    assertEquals(0, bus.handlersByType.size());
+    assertThat(weakReferenceTest).isNull();
+    Assertions.assertThat(bus.handlersByType).isEmpty();
   }
-  
+
   @Test
-  public void testStrongReference()
-  {
+  void testStrongReference() {
     EventBus bus = new EventBus();
     bus.register(new StrongListener());
     System.gc();
     bus.post("event");
-    assertEquals("event", strongReferenceTest);
+    assertThat(strongReferenceTest).isEqualTo("event");
   }
-  
+
   @Test
-  public void testSyncListener()
-  {
+  void testSyncListener() {
     EventBus bus = new EventBus();
     SyncListener listener = new SyncListener();
     bus.register(listener);
     bus.post("event");
-    assertEquals("event", listener.event);
+    assertThat(listener.event).isEqualTo("event");
   }
-  
+
   @Test
-  public void testAsyncListener() throws InterruptedException
-  {
+  void testAsyncListener() throws InterruptedException {
     EventBus bus = new EventBus();
     AsyncListener listener = new AsyncListener();
     bus.register(listener);
     bus.post("event");
-    assertNull(listener.event);
-    Thread.sleep(500l);
-    assertEquals("event", listener.event);
+    assertThat(listener.event).isNull();
+    Thread.sleep(500L);
+    assertThat(listener.event).isEqualTo("event");
   }
-  
+
   @Test
-  public void testDeadEvent(){
+  void testDeadEvent() {
     EventBus bus = new EventBus();
     SyncListener listener = new SyncListener();
     bus.register(listener);
     DeadEventListener deadEventListener = new DeadEventListener();
     bus.register(deadEventListener);
     bus.post(new Integer(12));
-    assertNotNull(deadEventListener.event);
+    assertThat(deadEventListener.event).isNotNull();
   }
-  
-  @Test(expected = IllegalStateException.class)
-  public void testRuntimeException(){
+
+  @Test
+  void testRuntimeException() {
     EventBus bus = new EventBus();
     bus.register(new RuntimeExceptionListener());
-    bus.post("event");
+    assertThrows(IllegalStateException.class, () -> bus.post("event"));
   }
-  
+
   @Test
-  public void testCheckedException(){
+  void testCheckedException() {
     EventBus bus = new EventBus();
     bus.register(new CheckedExceptionListener());
     String event = "event";
     Object failedEvent = null;
     try {
       bus.post(event);
-    } catch (EventBusException ex){
+    } catch (EventBusException ex) {
       failedEvent = ex.getEvent();
     }
-    assertEquals(event, failedEvent);
+    assertThat(event).isEqualTo(failedEvent);
   }
-  
+
   @Test
-  public void testAsyncException(){
+  void testAsyncException() {
     EventBus bus = new EventBus();
     bus.register(new AsyncCheckedExceptionListener());
-    bus.post("event");    
+    bus.post("event");
   }
-  
+
   @Test
-  public void testThreadName() throws InterruptedException{
+  void testThreadName() throws InterruptedException {
     EventBus bus = new EventBus("hansolo");
     ThreadNameTestListener listener = new ThreadNameTestListener();
     bus.register(listener);
     bus.post("event");
-    Thread.sleep(200l);
-    assertTrue(listener.threadName.startsWith("hansolo-"));
+    Thread.sleep(200L);
+    assertThat(listener.threadName).startsWith("hansolo-");
   }
-  
+
   @Test
-  public void testCleanupWeakReferences() throws InterruptedException
-  {
+  void testCleanupWeakReferences() {
     EventBus bus = new EventBus();
     bus.register(new WeakListener());
-    assertEquals(1, bus.handlersByType.size());
+    Assertions.assertThat(bus.handlersByType).hasSize(1);
     System.gc();
     bus.cleanupWeakReferences();
-    assertEquals(0, bus.handlersByType.size());
+    Assertions.assertThat(bus.handlersByType).isEmpty();
   }
-  
+
   @Test
-  public void testEmptyEventBus(){
+  void testEmptyEventBus() {
     EventBus bus = new EventBus();
     bus.post("event");
   }
 
   @Test
-  public void testShutdown() throws InterruptedException {
+  void testShutdown() throws InterruptedException {
     EventBus bus = new EventBus();
     AsyncListener listener = new AsyncListener();
     bus.register(listener);
@@ -151,91 +150,93 @@ public class EventBusTest
 
     bus.post("event");
 
-    assertNull(listener.event);
-    Thread.sleep(500l);
-    assertNull(listener.event);
+    assertThat(listener.event).isNull();
+    Thread.sleep(500L);
+    assertThat(listener.event).isNull();
   }
-  
-  /** Listener classes */
-  
-  private class ThreadNameTestListener {
-    
+
+  /**
+   * Listener classes
+   */
+
+  private static class ThreadNameTestListener {
+
     private String threadName;
-    
+
     @Subscribe
-    public void handleEvent(String event){
+    public void handleEvent(String event) {
       threadName = Thread.currentThread().getName();
     }
   }
-  
-  private class AsyncCheckedExceptionListener {
-    
+
+  private static class AsyncCheckedExceptionListener {
+
     @Subscribe
-    public void handleEvent(String event) throws IOException{
+    public void handleEvent(String event) throws IOException {
       throw new IOException();
     }
   }
-  
-  private class RuntimeExceptionListener {
+
+  private static class RuntimeExceptionListener {
 
     @Subscribe(async = false)
-    public void handleEvent(String event){
+    public void handleEvent(String event) {
       throw new IllegalStateException();
     }
   }
-  
-  private class CheckedExceptionListener {
-    
+
+  private static class CheckedExceptionListener {
+
     @Subscribe(async = false)
-    public void handleEvent(String event) throws IOException{
+    public void handleEvent(String event) throws IOException {
       throw new IOException();
     }
   }
-  
-  private class DeadEventListener {
-    
+
+  private static class DeadEventListener {
+
     private DeadEvent event;
-    
+
     @Subscribe(async = false)
-    public void handleEvent(DeadEvent event){
+    public void handleEvent(DeadEvent event) {
       this.event = event;
     }
   }
 
-  private class AsyncListener {
-    
+  private static class AsyncListener {
+
     private String event;
-    
+
     @Subscribe
-    public void handleEvent(String event){
+    public void handleEvent(String event) {
       this.event = event;
     }
   }
-  
-  private class SyncListener {
-    
+
+  private static class SyncListener {
+
     private String event;
-    
+
     @Subscribe(async = false)
-    public void handleEvent(String event){
+    public void handleEvent(String event) {
       this.event = event;
     }
   }
-  
+
   private class StrongListener {
-    
+
     @Subscribe(async = false, referenceType = ReferenceType.STRONG)
-    public void handleEvent(String event){
+    public void handleEvent(String event) {
       strongReferenceTest = event;
-    } 
+    }
   }
-  
+
   private class WeakListener {
-    
+
     @Subscribe(async = false)
-    public void handleEvent(String event){
+    public void handleEvent(String event) {
       weakReferenceTest = event;
     }
   }
-  
+
 }

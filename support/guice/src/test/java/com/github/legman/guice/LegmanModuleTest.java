@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Sebastian Sdorra
+ * Copyright (C) 2013 SCM-Manager Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,19 +23,19 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 
 /**
  *
  * @author Sebastian Sdorra
  */
-public class LegmanModuleTest
-{
+class LegmanModuleTest {
 
   @Test
-  public void testSomeMethod()
-  {
+  void testSomeMethod() {
     EventBus eventBus = new EventBus();
     Injector injector = Guice.createInjector(
       new LegmanModule(eventBus),
@@ -46,21 +46,21 @@ public class LegmanModuleTest
         bind(SampleService.class).in(Singleton.class);
       }
     });
-    
+
     SampleService service = injector.getInstance(SampleService.class);
     eventBus.post("event");
-    assertEquals("event", service.event);
+    assertThat(service.event).isEqualTo("event");
   }
-  
+
   public static class SampleService {
-    
+
     private String event;
-    
+
     @Subscribe(async = false)
-    public void handleEvent(String event){
+    public void handleEvent(String event) {
       this.event = event;
     }
-    
+
   }
-  
+
 }

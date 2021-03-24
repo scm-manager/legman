@@ -14,14 +14,19 @@
  * limitations under the License.
  */
 
-package com.github.legman;
+package com.github.legman.shiro;
+
+import com.github.legman.EventBus;
+import com.github.legman.Plugin;
 
 /**
- * Type of subscriber reference.
+ * Legman plugin for Apache Shiro integration.
  *
- * @author Sebastian Sdorra
- * @since 1.0.0
+ * @since 2.0.0
  */
-public enum ReferenceType {
-  WEAK, STRONG
+public class ShiroPlugin implements Plugin {
+  @Override
+  public void apply(EventBus.Builder builder) {
+    builder.withExecutorDecoratorFactories(new ShiroExecutorDecoratorFactory());
+  }
 }

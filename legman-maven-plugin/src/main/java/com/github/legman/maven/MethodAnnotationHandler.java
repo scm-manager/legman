@@ -14,14 +14,25 @@
  * limitations under the License.
  */
 
-package com.github.legman;
+
+
+package com.github.legman.maven;
 
 /**
- * Type of subscriber reference.
  *
  * @author Sebastian Sdorra
- * @since 1.0.0
  */
-public enum ReferenceType {
-  WEAK, STRONG
+public interface MethodAnnotationHandler
+{
+
+  /**
+   * Method description
+   *
+   *
+   * @param className
+   * @param methodName
+   * @param annotationName
+   */
+  public void handleMethodAnnotation(String className, String methodName,
+    String annotationName);
 }

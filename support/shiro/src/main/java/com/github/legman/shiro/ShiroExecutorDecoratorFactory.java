@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Sebastian Sdorra
+ * Copyright (C) 2013 SCM-Manager Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-
-
 package com.github.legman.shiro;
 
 import com.github.legman.ExecutorDecoratorFactory;
@@ -29,24 +27,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * Makes the legman executor aware of the shiro subject.
  *
  * @author Sebastian Sdorra
  * @since 1.0.0
  */
-public class ShiroExecutorDecoratorFactory implements ExecutorDecoratorFactory
-{
+class ShiroExecutorDecoratorFactory implements ExecutorDecoratorFactory {
 
-  /**
-   * the logger for ShiroExecutorDecoratorFactory
-   */
-  private static final Logger logger = LoggerFactory.getLogger(
-    ShiroExecutorDecoratorFactory.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ShiroExecutorDecoratorFactory.class);
 
   @Override
-  public Executor decorate(Executor executor)
-  {
-    logger.debug(
-      "register {} as {} for legman",
+  public Executor decorate(Executor executor) {
+    LOG.debug("register {} as {} for legman",
       ShiroExecutorDecoratorFactory.class,
       ExecutorDecoratorFactory.class
     );

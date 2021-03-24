@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 The Guava Authors and Sebastian Sdorra
+ * Copyright (C) 2007 The Guava Authors and SCM-Manager Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
 
 package com.github.legman;
 
@@ -40,15 +38,14 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Subscribe
-{
+public @interface Subscribe {
   /**
    * Returns true if the event should be handled asynchronous.
    * The default is asynchronous.
    *
    * @return true if the event should be handled asynchronous.
    */
-  public boolean async() default true;
+  boolean async() default true;
 
   /**
    * Marks an event handling method as being thread-safe.  This attribute
@@ -57,13 +54,13 @@ public @interface Subscribe
    *
    * @return false if the annotated method is thread-safe
    */
-  public boolean allowConcurrentAccess() default false;
-  
+  boolean allowConcurrentAccess() default false;
+
   /**
-   * By default all references to message listeners are weak to eliminate the 
+   * By default all references to message listeners are weak to eliminate the
    * risk of a memory leak. It is possible to use strong references.
-   * 
+   *
    * @return the reference type
    */
-  public ReferenceType referenceType() default ReferenceType.WEAK;
+  ReferenceType referenceType() default ReferenceType.WEAK;
 }

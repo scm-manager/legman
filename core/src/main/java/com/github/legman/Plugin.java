@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 SCM-Manager Team
+ * Copyright (C) 2007 The Guava Authors and SCM-Manager Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,16 @@
 package com.github.legman;
 
 /**
- * Type of subscriber reference.
+ * A {@link Plugin} can be used to register all components needed for an integration to the event bus.
  *
- * @author Sebastian Sdorra
- * @since 1.0.0
+ * @since 2.0.0
  */
-public enum ReferenceType {
-  WEAK, STRONG
+public interface Plugin {
+
+  /**
+   * Prepare builder for integration.
+   *
+   * @param builder eventbus builder
+   */
+  void apply(EventBus.Builder builder);
 }
