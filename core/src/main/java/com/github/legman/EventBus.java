@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007 The Guava Authors and Sebastian Sdorra
+ * Copyright (C) 2007 The Guava Authors and SCM-Manager Team
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
