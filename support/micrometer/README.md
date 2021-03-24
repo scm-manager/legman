@@ -6,7 +6,7 @@ The Micrometer support module collect metrics about invocations and usage of the
 
 ```xml
 <dependency>
-  <groupId>com.github.legman.support</groupId>
+  <groupId>com.cloudogu.legman.support</groupId>
   <artifactId>micrometer</artifactId>
   <version>2.0.0</version>
 </dependency>

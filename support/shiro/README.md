@@ -6,7 +6,7 @@ The Apache Shiro support module allows the usage of SecurityManager and Subject 
 
 ```xml
 <dependency>
-  <groupId>com.github.legman.support</groupId>
+  <groupId>com.cloudogu.legman.support</groupId>
   <artifactId>shiro</artifactId>
   <version>2.0.0</version>
 </dependency>

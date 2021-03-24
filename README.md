@@ -21,7 +21,7 @@ In addition, Legman comes with ready to use integrations:
 <dependencies>
     
   <dependency>
-    <groupId>com.github.legman</groupId>
+    <groupId>com.cloudogu.legman</groupId>
     <artifactId>core</artifactId>
     <version>2.0.0</version>
   </dependency>

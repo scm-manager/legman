@@ -6,7 +6,7 @@ The Guice support module can be used to register every class which is instanciat
 
 ```xml
 <dependency>
-  <groupId>com.github.legman.support</groupId>
+  <groupId>com.cloudogu.legman.support</groupId>
   <artifactId>guice</artifactId>
   <version>2.0.0</version>
 </dependency>
