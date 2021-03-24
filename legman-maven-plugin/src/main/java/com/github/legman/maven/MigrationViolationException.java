@@ -15,33 +15,11 @@
  */
 
 
+package com.github.legman.maven;
 
-package sonia.legman.maven;
+public final class MigrationViolationException extends RuntimeException {
 
-//~--- non-JDK imports --------------------------------------------------------
-
-import com.google.common.eventbus.AllowConcurrentEvents;
-import com.google.common.eventbus.Subscribe;
-
-/**
- *
- * @author Sebastian Sdorra
- */
-public class GuavaAnnotated
-{
-
-  /**
-   * Method description
-   *
-   */
-  @Subscribe
-  public void methodOne() {}
-
-  /**
-   * Method description
-   *
-   */
-  @Subscribe
-  @AllowConcurrentEvents
-  public void methodTwo() {}
+    public MigrationViolationException(String message) {
+        super(message);
+    }
 }

@@ -16,7 +16,7 @@
 
 
 
-package sonia.legman.maven;
+package com.github.legman.maven;
 
 //~--- non-JDK imports --------------------------------------------------------
 
@@ -30,8 +30,6 @@ import org.apache.maven.plugin.MojoFailureException;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
-
-import sonia.legman.maven.MethodAnnotationClassVisitor.Builder;
 
 //~--- JDK imports ------------------------------------------------------------
 
@@ -127,7 +125,7 @@ public class GuavaMigrationMojo extends AbstractMojo
 
       ClassReader reader = new ClassReader(stream);
 
-      Builder builder = MethodAnnotationClassVisitor.builder();
+      MethodAnnotationClassVisitor.Builder builder = MethodAnnotationClassVisitor.builder();
 
       builder.api(Opcodes.ASM5);
       builder.annotateClasses(Subscribe.class, AllowConcurrentEvents.class);
@@ -144,7 +142,7 @@ public class GuavaMigrationMojo extends AbstractMojo
             .replace("{method}", methodName)
             .replace("{annotation}", annotationName)
             .replace("{subscribe}", com.github.legman.Subscribe.class.getName());
-          //J+ 
+          //J+
 
           handleViolation(message);
         }

@@ -16,7 +16,7 @@
 
 
 
-package sonia.legman.maven;
+package com.github.legman.maven;
 
 //~--- non-JDK imports --------------------------------------------------------
 
@@ -31,11 +31,8 @@ import com.google.common.io.Closeables;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
 
-import sonia.legman.maven.MethodAnnotationClassVisitor.Builder;
-
 //~--- JDK imports ------------------------------------------------------------
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,7 +51,7 @@ class MethodAnnotationClassVisitorTest {
   private static final String CLASS = GuavaAnnotated.class.getName();
 
   private static final String CLASSFILE =
-    "target/test-classes/sonia/legman/maven/GuavaAnnotated.class";
+    "target/test-classes/com/github/legman/maven/GuavaAnnotated.class";
 
   private static final String METHOD_ONE = "methodOne";
   private static final String METHOD_TWO = "methodTwo";
@@ -64,7 +61,7 @@ class MethodAnnotationClassVisitorTest {
   @Test
   void testMethodAnnotationVisitor() throws IOException {
     final List<AnnotatedMethod> list = Lists.newArrayList();
-    Builder builder = MethodAnnotationClassVisitor.builder();
+    MethodAnnotationClassVisitor.Builder builder = MethodAnnotationClassVisitor.builder();
 
     builder.annotateClasses(Subscribe.class, AllowConcurrentEvents.class);
     builder.methodAnnotationHandler(new MethodAnnotationHandler()

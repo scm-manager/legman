@@ -16,7 +16,7 @@
 
 
 
-package sonia.legman.maven;
+package com.github.legman.maven;
 
 //~--- non-JDK imports --------------------------------------------------------
 
