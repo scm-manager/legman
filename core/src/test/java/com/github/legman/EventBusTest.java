@@ -20,6 +20,7 @@ import org.assertj.guava.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -113,6 +114,28 @@ class EventBusTest {
     EventBus bus = new EventBus();
     bus.register(new AsyncCheckedExceptionListener());
     bus.post("event");
+  }
+
+  @Test
+  void testConcurrentExecution() {
+    EventBus bus = new EventBus();
+    ConcurrentListener concurrentListener = new ConcurrentListener();
+    bus.register(concurrentListener);
+    bus.post("event");
+    bus.post("event");
+    bus.post("event");
+    assertThat(concurrentListener.concurrentAccessDetected).isTrue();
+  }
+
+  @Test
+  void testNonConcurrentExecution() {
+    EventBus bus = new EventBus();
+    NonConcurrentListener concurrentListener = new NonConcurrentListener();
+    bus.register(concurrentListener);
+    bus.post("event");
+    bus.post("event");
+    bus.post("event");
+    assertThat(concurrentListener.concurrentAccessDetected).isFalse();
   }
 
   @Test
@@ -210,6 +233,36 @@ class EventBusTest {
     @Subscribe
     public void handleEvent(String event) {
       this.event = event;
+    }
+  }
+
+  private static class ConcurrentListener {
+
+    private final AtomicInteger currentAccessCount = new AtomicInteger(0);
+    private boolean concurrentAccessDetected = false;
+
+    @Subscribe(allowConcurrentAccess = true)
+    public void handleEvent(String event) throws InterruptedException {
+      if (currentAccessCount.getAndIncrement() > 0) {
+        concurrentAccessDetected = true;
+      }
+      Thread.sleep(100);
+      currentAccessCount.decrementAndGet();
+    }
+  }
+
+  private static class NonConcurrentListener {
+
+    private final AtomicInteger currentAccessCount = new AtomicInteger(0);
+    private boolean concurrentAccessDetected = false;
+
+    @Subscribe(allowConcurrentAccess = false)
+    public void handleEvent(String event) throws InterruptedException {
+      if (currentAccessCount.getAndIncrement() > 0) {
+        concurrentAccessDetected = true;
+      }
+      Thread.sleep(100);
+      currentAccessCount.decrementAndGet();
     }
   }
 
