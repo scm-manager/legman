@@ -52,4 +52,9 @@ final class SynchronizedEventHandler extends EventHandler {
       super.handleEvent(event);
     }
   }
+
+  @Override
+  boolean hasToBeSynchronized() {
+    return true;
+  }
 }

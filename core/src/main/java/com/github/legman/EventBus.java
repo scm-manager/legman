@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -161,7 +163,7 @@ public class EventBus {
   private final String identifier;
 
   /** executor for handling asynchronous events */
-  private final Executor executor;
+  private final OrderedExecutor executor;
 
   /** list of invocation interceptors **/
   private final List<InvocationInterceptor> invocationInterceptors;
@@ -194,7 +196,7 @@ public class EventBus {
 
   private EventBus(Builder builder) {
     this.identifier = builder.identifier;
-    this.executor = createExecutor(builder);
+    this.executor = new OrderedExecutor(createExecutor(builder));
     this.invocationInterceptors = Collections.unmodifiableList(builder.invocationInterceptors);
     this.finder = new AnnotatedHandlerFinder();
   }
@@ -441,7 +443,7 @@ public class EventBus {
     }
 
     if ( wrapper.isAsync() ){
-      executor.execute(() -> dispatchSynchronous(event, wrapper));
+      executor.executeAsync(event, wrapper);
     } else {
       dispatchSynchronous(event, wrapper);
     }
@@ -488,9 +490,7 @@ public class EventBus {
    */
   public void shutdown() {
     shutdown.set(true);
-    if (executor instanceof ExecutorService) {
-      ((ExecutorService) executor).shutdown();
-    }
+    executor.shutdown();
   }
 
   /**
@@ -600,6 +600,84 @@ public class EventBus {
      */
     public EventBus build() {
       return new EventBus(this);
+    }
+  }
+
+  private class OrderedExecutor {
+
+    private final Executor delegate;
+
+    private final Set<EventHandler> runningHandlers = new HashSet<>();
+    private final Queue<HandlerWithEvent> queuedHandlers = new LinkedList<>();
+
+    private OrderedExecutor(Executor delegate) {
+      this.delegate = delegate;
+    }
+
+    void executeAsync(final Object event, final EventHandler wrapper) {
+      if (wrapper.hasToBeSynchronized()) {
+        executeSynchronized(event, wrapper);
+      } else {
+        logger.warn("executing handler concurrently: {}", wrapper);
+        delegate.execute(() -> dispatchSynchronous(event, wrapper));
+      }
+    }
+
+    void executeSynchronized(final Object event, final EventHandler wrapper) {
+      synchronized (runningHandlers) {
+        if (runningHandlers.contains(wrapper)) {
+          logger.warn("postponing execution of handler {}", wrapper);
+          queuedHandlers.add(new HandlerWithEvent(event, wrapper));
+        } else {
+          synchronized (runningHandlers) {
+            runningHandlers.add(wrapper);
+            delegate.execute(() -> {
+              try {
+                dispatchSynchronous(event, wrapper);
+              } finally {
+                synchronized (runningHandlers) {
+                  runningHandlers.remove(wrapper);
+                  for (Iterator<HandlerWithEvent> iterator = queuedHandlers.iterator(); iterator.hasNext(); ) {
+                    HandlerWithEvent queuedHandler = iterator.next();
+                    if (runningHandlers.contains(queuedHandler.getHandler())) {
+                      logger.warn("execution of handler still waiting, because other call is still running: {}", wrapper);
+                    } else {
+                      logger.warn("executing postponed handler because it is no longer blocked: {}", wrapper);
+                      iterator.remove();
+                      executeAsync(queuedHandler.getEvent(), queuedHandler.getHandler());
+                      break;
+                    }
+                  }
+                }
+              }
+            });
+          }
+        }
+      }
+    }
+
+    void shutdown() {
+      if (delegate instanceof ExecutorService) {
+        ((ExecutorService) delegate).shutdown();
+      }
+    }
+  }
+
+  private final class HandlerWithEvent {
+    private final Object event;
+    private final EventHandler handler;
+
+    public HandlerWithEvent(Object event, EventHandler handler) {
+      this.event = event;
+      this.handler = handler;
+    }
+
+    public Object getEvent() {
+      return event;
+    }
+
+    public EventHandler getHandler() {
+      return handler;
     }
   }
 }

@@ -20,6 +20,7 @@ import org.assertj.guava.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -178,6 +179,24 @@ class EventBusTest {
     assertThat(listener.event).isNull();
   }
 
+  @Test
+  void shouldNotBeBlockedByLongRunningEventHandlers() throws InterruptedException {
+    EventBus bus = new EventBus();
+    LongRunningListener longRunningListener = new LongRunningListener();
+    bus.register(longRunningListener);
+    QuickListener quickListener = new QuickListener();
+    bus.register(quickListener);
+
+    bus.post("event");
+    bus.post("event");
+    bus.post("event");
+    bus.post("event");
+    bus.post("event");
+
+    quickListener.awaitCountDown();
+    assertThat(longRunningListener.currentCount()).isEqualTo(0);
+  }
+
   /**
    * Listener classes
    */
@@ -246,7 +265,7 @@ class EventBusTest {
       if (currentAccessCount.getAndIncrement() > 0) {
         concurrentAccessDetected = true;
       }
-      Thread.sleep(100);
+      Thread.sleep(1000);
       currentAccessCount.decrementAndGet();
     }
   }
@@ -261,7 +280,7 @@ class EventBusTest {
       if (currentAccessCount.getAndIncrement() > 0) {
         concurrentAccessDetected = true;
       }
-      Thread.sleep(100);
+      Thread.sleep(1000);
       currentAccessCount.decrementAndGet();
     }
   }
@@ -292,4 +311,37 @@ class EventBusTest {
     }
   }
 
+  private static class LongRunningListener {
+
+    private AtomicInteger readyCount = new AtomicInteger(0);
+
+    @Subscribe
+    public void handleEvent(String event) {
+      try {
+        Thread.sleep(1000);
+        readyCount.incrementAndGet();
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    int currentCount() {
+      return readyCount.get();
+    }
+  }
+
+  private static class QuickListener {
+
+    private final CountDownLatch countDownLatch = new CountDownLatch(5);
+
+    @Subscribe
+    public void handleEvent(String event) {
+      System.out.println(countDownLatch.getCount());
+      countDownLatch.countDown();
+    }
+
+    void awaitCountDown() throws InterruptedException {
+      countDownLatch.await();
+    }
+  }
 }

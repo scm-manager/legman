@@ -156,4 +156,8 @@ class EventHandler {
             .addValue(async)
             .toString();
   }
+
+  boolean hasToBeSynchronized() {
+    return false;
+  }
 }
