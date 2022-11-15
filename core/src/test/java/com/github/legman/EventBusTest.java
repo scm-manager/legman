@@ -118,28 +118,6 @@ class EventBusTest {
   }
 
   @Test
-  void testConcurrentExecution() {
-    EventBus bus = new EventBus();
-    ConcurrentListener concurrentListener = new ConcurrentListener();
-    bus.register(concurrentListener);
-    bus.post("event");
-    bus.post("event");
-    bus.post("event");
-    assertThat(concurrentListener.concurrentAccessDetected).isTrue();
-  }
-
-  @Test
-  void testNonConcurrentExecution() {
-    EventBus bus = new EventBus();
-    NonConcurrentListener concurrentListener = new NonConcurrentListener();
-    bus.register(concurrentListener);
-    bus.post("event");
-    bus.post("event");
-    bus.post("event");
-    assertThat(concurrentListener.concurrentAccessDetected).isFalse();
-  }
-
-  @Test
   void testThreadName() throws InterruptedException {
     EventBus bus = new EventBus("hansolo");
     ThreadNameTestListener listener = new ThreadNameTestListener();
@@ -177,6 +155,28 @@ class EventBusTest {
     assertThat(listener.event).isNull();
     Thread.sleep(500L);
     assertThat(listener.event).isNull();
+  }
+
+  @Test
+  void testConcurrentExecution() {
+    EventBus bus = new EventBus();
+    ConcurrentListener concurrentListener = new ConcurrentListener();
+    bus.register(concurrentListener);
+    bus.post("event");
+    bus.post("event");
+    bus.post("event");
+    assertThat(concurrentListener.concurrentAccessDetected).isTrue();
+  }
+
+  @Test
+  void testNonConcurrentExecution() {
+    EventBus bus = new EventBus();
+    NonConcurrentListener concurrentListener = new NonConcurrentListener();
+    bus.register(concurrentListener);
+    bus.post("event");
+    bus.post("event");
+    bus.post("event");
+    assertThat(concurrentListener.concurrentAccessDetected).isFalse();
   }
 
   @Test
@@ -255,6 +255,32 @@ class EventBusTest {
     }
   }
 
+  private static class SyncListener {
+
+    private String event;
+
+    @Subscribe(async = false)
+    public void handleEvent(String event) {
+      this.event = event;
+    }
+  }
+
+  private class StrongListener {
+
+    @Subscribe(async = false, referenceType = ReferenceType.STRONG)
+    public void handleEvent(String event) {
+      strongReferenceTest = event;
+    }
+  }
+
+  private class WeakListener {
+
+    @Subscribe(async = false)
+    public void handleEvent(String event) {
+      weakReferenceTest = event;
+    }
+  }
+
   private static class ConcurrentListener {
 
     private final AtomicInteger currentAccessCount = new AtomicInteger(0);
@@ -282,32 +308,6 @@ class EventBusTest {
       }
       Thread.sleep(1000);
       currentAccessCount.decrementAndGet();
-    }
-  }
-
-  private static class SyncListener {
-
-    private String event;
-
-    @Subscribe(async = false)
-    public void handleEvent(String event) {
-      this.event = event;
-    }
-  }
-
-  private class StrongListener {
-
-    @Subscribe(async = false, referenceType = ReferenceType.STRONG)
-    public void handleEvent(String event) {
-      strongReferenceTest = event;
-    }
-  }
-
-  private class WeakListener {
-
-    @Subscribe(async = false)
-    public void handleEvent(String event) {
-      weakReferenceTest = event;
     }
   }
 
