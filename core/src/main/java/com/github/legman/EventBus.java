@@ -623,35 +623,38 @@ public class EventBus {
       }
     }
 
-    void executeSynchronized(final Object event, final EventHandler wrapper) {
+    private void executeSynchronized(final Object event, final EventHandler wrapper) {
       synchronized (runningHandlers) {
         if (runningHandlers.contains(wrapper)) {
-          logger.warn("postponing execution of handler {}", wrapper);
+          logger.warn("postponing execution of handler {}; there are already {} other handlers waiting", wrapper, queuedHandlers.size());
           queuedHandlers.add(new HandlerWithEvent(event, wrapper));
         } else {
-          synchronized (runningHandlers) {
-            runningHandlers.add(wrapper);
-            delegate.execute(() -> {
-              try {
-                dispatchSynchronous(event, wrapper);
-              } finally {
-                synchronized (runningHandlers) {
-                  runningHandlers.remove(wrapper);
-                  for (Iterator<HandlerWithEvent> iterator = queuedHandlers.iterator(); iterator.hasNext(); ) {
-                    HandlerWithEvent queuedHandler = iterator.next();
-                    if (runningHandlers.contains(queuedHandler.getHandler())) {
-                      logger.warn("execution of handler still waiting, because other call is still running: {}", wrapper);
-                    } else {
-                      logger.warn("executing postponed handler because it is no longer blocked: {}", wrapper);
-                      iterator.remove();
-                      executeAsync(queuedHandler.getEvent(), queuedHandler.getHandler());
-                      break;
-                    }
-                  }
-                }
+          runningHandlers.add(wrapper);
+          delegate.execute(() -> {
+            try {
+              dispatchSynchronous(event, wrapper);
+            } finally {
+              synchronized (runningHandlers) {
+                runningHandlers.remove(wrapper);
+                triggerWaitingHandlers(wrapper);
               }
-            });
-          }
+            }
+          });
+        }
+      }
+    }
+
+    private void triggerWaitingHandlers(EventHandler wrapper) {
+      logger.warn("checking {} waiting handlers for possible execution", queuedHandlers.size());
+      for (Iterator<HandlerWithEvent> iterator = queuedHandlers.iterator(); iterator.hasNext(); ) {
+        HandlerWithEvent queuedHandler = iterator.next();
+        if (runningHandlers.contains(queuedHandler.getHandler())) {
+          logger.warn("execution of handler still waiting, because other call is still running: {}", wrapper);
+        } else {
+          logger.warn("executing postponed handler because it is no longer blocked: {}", wrapper);
+          iterator.remove();
+          executeAsync(queuedHandler.getEvent(), queuedHandler.getHandler());
+          break;
         }
       }
     }

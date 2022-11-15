@@ -17,13 +17,20 @@
 package com.github.legman;
 
 import org.assertj.guava.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
+import static java.util.Collections.synchronizedCollection;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
@@ -194,12 +201,40 @@ class EventBusTest {
     bus.post("event");
 
     quickListener.awaitCountDown();
-    assertThat(longRunningListener.currentCount()).isEqualTo(0);
+    assertThat(longRunningListener.currentCount()).isZero();
   }
 
-  /**
-   * Listener classes
-   */
+  @Test
+  @Disabled("for manual testing only")
+  void shouldHandleMassiveEvents() {
+    EventBus bus = new EventBus();
+    RandomNonConcurrentListener listener1 = new RandomNonConcurrentListener(1);
+    bus.register(listener1);
+    RandomNonConcurrentListener listener2 = new RandomNonConcurrentListener(2);
+    bus.register(listener2);
+    RandomNonConcurrentListener listener3 = new RandomNonConcurrentListener(3);
+    bus.register(listener3);
+    RandomNonConcurrentListener listener4 = new RandomNonConcurrentListener(4);
+    bus.register(listener4);
+
+    IntStream.range(0, 1000)
+            .peek(i -> {
+              try {
+                Thread.sleep((long)(500 * Math.random()));
+              } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+              }
+            })
+            .forEach(bus::post);
+
+    await().atMost(1000, SECONDS)
+            .untilAsserted(() -> {
+              assertThat(listener1.handledEventCount()).isEqualTo(1000);
+              assertThat(listener2.handledEventCount()).isEqualTo(1000);
+              assertThat(listener3.handledEventCount()).isEqualTo(1000);
+              assertThat(listener4.handledEventCount()).isEqualTo(1000);
+            });
+  }
 
   private static class ThreadNameTestListener {
 
@@ -342,6 +377,31 @@ class EventBusTest {
 
     void awaitCountDown() throws InterruptedException {
       countDownLatch.await();
+    }
+  }
+
+  private static class RandomNonConcurrentListener {
+
+    private final Collection<Integer> handledEvents = synchronizedCollection(new HashSet<>(1000));
+    private final int nr;
+
+    public RandomNonConcurrentListener(int nr) {
+      this.nr = nr;
+    }
+
+    @Subscribe
+    public void handleEvent(Integer event) {
+      try {
+        System.out.printf("Running %s - %s%n", nr, event);
+        Thread.sleep((long)(Math.random() * 1000));
+        handledEvents.add(event);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    private int handledEventCount() {
+      return handledEvents.size();
     }
   }
 }
