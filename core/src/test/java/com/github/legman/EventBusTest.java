@@ -16,15 +16,19 @@
 
 package com.github.legman;
 
+import com.google.common.base.Stopwatch;
 import org.assertj.guava.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.util.Collections.synchronizedCollection;
@@ -208,32 +212,39 @@ class EventBusTest {
   @Disabled("for manual testing only")
   void shouldHandleMassiveEvents() {
     EventBus bus = new EventBus();
-    RandomNonConcurrentListener listener1 = new RandomNonConcurrentListener(1);
-    bus.register(listener1);
-    RandomNonConcurrentListener listener2 = new RandomNonConcurrentListener(2);
-    bus.register(listener2);
-    RandomNonConcurrentListener listener3 = new RandomNonConcurrentListener(3);
-    bus.register(listener3);
-    RandomNonConcurrentListener listener4 = new RandomNonConcurrentListener(4);
-    bus.register(listener4);
+    Collection<RandomNonConcurrentListener> listener = IntStream.range(1, 7)
+            .mapToObj(RandomNonConcurrentListener::new)
+            .collect(Collectors.toList());
+    listener.forEach(bus::register);
 
-    IntStream.range(0, 1000)
-            .peek(i -> {
-              try {
-                Thread.sleep((long)(500 * Math.random()));
-              } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-              }
-            })
-            .forEach(bus::post);
+    AtomicLong maxPostTime = new AtomicLong(0);
+
+    new Thread(() ->
+            IntStream.range(0, 1000)
+                    .peek(i -> {
+                      try {
+                        Thread.sleep((long) (200 * Math.random()));
+                      } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                      }
+                    })
+                    .forEach(event -> {
+                      System.out.printf("posting event %s%n", event);
+                      Stopwatch stopwatch = Stopwatch.createStarted();
+                      bus.post(event);
+                      long postTimeInMs = stopwatch.elapsed().get(ChronoUnit.NANOS) / 1000000;
+                      System.out.printf("posting event %s took %sms%n", event, postTimeInMs);
+                      maxPostTime.getAndAccumulate(postTimeInMs, Math::max);
+                    })).start();
 
     await().atMost(1000, SECONDS)
             .untilAsserted(() -> {
-              assertThat(listener1.handledEventCount()).isEqualTo(1000);
-              assertThat(listener2.handledEventCount()).isEqualTo(1000);
-              assertThat(listener3.handledEventCount()).isEqualTo(1000);
-              assertThat(listener4.handledEventCount()).isEqualTo(1000);
+              listener.forEach(
+                      l -> assertThat(l.handledEventCount()).as("checking executed tasks of event handler #%s", l.nr).isEqualTo(1000)
+              );
             });
+
+    assertThat(maxPostTime.get()).isLessThan(10);
   }
 
   private static class ThreadNameTestListener {
@@ -393,7 +404,7 @@ class EventBusTest {
     public void handleEvent(Integer event) {
       try {
         System.out.printf("Running %s - %s%n", nr, event);
-        Thread.sleep((long)(Math.random() * 1000));
+        Thread.sleep((long)(Math.random() * 1000 / nr));
         handledEvents.add(event);
       } catch (InterruptedException e) {
         throw new RuntimeException(e);
