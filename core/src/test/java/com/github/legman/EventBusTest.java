@@ -232,22 +232,25 @@ class EventBusTest {
     AtomicLong maxPostTime = new AtomicLong(0);
 
     new Thread(() ->
-            IntStream.range(0, 1000)
-                    .peek(i -> {
-                      try {
-                        Thread.sleep((long) (200 * Math.random()));
-                      } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                      }
-                    })
-                    .forEach(event -> {
-                      System.out.printf("posting event %s%n", event);
-                      Stopwatch stopwatch = Stopwatch.createStarted();
-                      bus.post(event);
-                      long postTimeInMs = stopwatch.elapsed().get(ChronoUnit.NANOS) / 1000000;
-                      System.out.printf("posting event %s took %sms%n", event, postTimeInMs);
-                      maxPostTime.getAndAccumulate(postTimeInMs, Math::max);
-                    })).start();
+    {
+      IntStream.range(0, 1000)
+              .peek(i -> {
+                try {
+                  Thread.sleep((long) (200 * Math.random()));
+                } catch (InterruptedException e) {
+                  throw new RuntimeException(e);
+                }
+              })
+              .forEach(event -> {
+                System.out.printf("posting event %s%n", event);
+                Stopwatch stopwatch = Stopwatch.createStarted();
+                bus.post(event);
+                long postTimeInMs = stopwatch.elapsed().get(ChronoUnit.NANOS) / 1000000;
+                System.out.printf("posting event %s took %sms%n", event, postTimeInMs);
+                maxPostTime.getAndAccumulate(postTimeInMs, Math::max);
+              });
+      bus.shutdown();
+    }).start();
 
     await().atMost(1000, SECONDS)
             .untilAsserted(() -> {
@@ -256,7 +259,7 @@ class EventBusTest {
               );
             });
 
-    assertThat(maxPostTime.get()).isLessThan(10);
+    assertThat(maxPostTime.get()).isLessThan(100);
   }
 
   private static class ThreadNameTestListener {
@@ -421,7 +424,7 @@ class EventBusTest {
     public void handleEvent(Integer event) {
       try {
         System.out.printf("Running %s - %s%n", nr, event);
-        Thread.sleep((long)(Math.random() * 1000 / nr));
+        Thread.sleep((long)(Math.random() * 1000 / Math.max(Math.random() * nr, 1)));
         handledEvents.add(event);
       } catch (InterruptedException e) {
         throw new RuntimeException(e);

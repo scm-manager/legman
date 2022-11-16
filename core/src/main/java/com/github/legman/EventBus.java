@@ -31,13 +31,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -46,7 +43,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -442,23 +438,9 @@ public class EventBus {
     }
 
     if ( wrapper.isAsync() ){
-      executor.executeAsync(event, wrapper);
+      executor.dispatchAsynchronous(event, wrapper);
     } else {
-      dispatchSynchronous(event, wrapper);
-    }
-  }
-
-  void dispatchSynchronous(Object event, EventHandler wrapper){
-    try {
-      wrapper.handleEvent(event);
-    } catch (InvocationTargetException e) {
-      if ( wrapper.isAsync() ){
-        logger.error("{} - could not dispatch event: {} to handler {}", identifier, event, wrapper, e);
-      } else {
-        Throwable cause = e.getCause();
-        Throwables.propagateIfPossible(cause);
-        throw new EventBusException(event, "could not dispatch event", cause);
-      }
+      executor.dispatchDirectly(event, wrapper);
     }
   }
 
@@ -599,69 +581,4 @@ public class EventBus {
     }
   }
 
-  private class OrderedExecutor {
-
-    private final Executor delegate;
-    private final ExecutorService worker = Executors.newSingleThreadExecutor();
-
-    private final Set<EventHandler> runningHandlers = new HashSet<>();
-    private final Queue<EventWithHandler> queuedHandlers = new LinkedList<>();
-
-    private OrderedExecutor(Executor delegate) {
-      this.delegate = delegate;
-    }
-
-    void executeAsync(final Object event, final EventHandler wrapper) {
-      if (wrapper.hasToBeSynchronized()) {
-        executeSynchronized(event, wrapper);
-      } else {
-        logger.debug("executing handler concurrently: {}", wrapper);
-        delegate.execute(() -> dispatchSynchronous(event, wrapper));
-      }
-    }
-
-    private void executeSynchronized(final Object event, final EventHandler wrapper) {
-      worker.execute(() -> {
-        synchronized (runningHandlers) {
-          if (runningHandlers.contains(wrapper)) {
-            logger.debug("postponing execution of handler {}; there are already {} other handlers waiting", wrapper, queuedHandlers.size());
-            queuedHandlers.add(new EventWithHandler(event, wrapper));
-          } else {
-            runningHandlers.add(wrapper);
-            delegate.execute(() -> {
-              try {
-                dispatchSynchronous(event, wrapper);
-              } finally {
-                synchronized (runningHandlers) {
-                  runningHandlers.remove(wrapper);
-                  triggerWaitingHandlers(wrapper);
-                }
-              }
-            });
-          }
-        }
-      });
-    }
-
-    private void triggerWaitingHandlers(EventHandler wrapper) {
-      logger.debug("checking {} waiting handlers for possible execution", queuedHandlers.size());
-          logger.debug("execution of handler still waiting, because other call is still running: {}", wrapper);
-      for (Iterator<EventWithHandler> iterator = queuedHandlers.iterator(); iterator.hasNext(); ) {
-        EventWithHandler queuedHandler = iterator.next();
-        if (runningHandlers.contains(queuedHandler.handler)) {
-        } else {
-          logger.debug("executing postponed handler because it is no longer blocked: {}", wrapper);
-          iterator.remove();
-          executeSynchronized(queuedHandler.event, queuedHandler.handler);
-          break;
-        }
-      }
-    }
-
-    void shutdown() {
-      if (delegate instanceof ExecutorService) {
-        ((ExecutorService) delegate).shutdown();
-      }
-    }
-  }
 }

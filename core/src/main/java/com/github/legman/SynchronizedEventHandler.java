@@ -46,11 +46,6 @@ final class SynchronizedEventHandler extends EventHandler {
   }
 
   @Override
-  public void handleEvent(Object event) throws InvocationTargetException {
-    super.handleEvent(event);
-  }
-
-  @Override
   boolean hasToBeSynchronized() {
     return true;
   }
