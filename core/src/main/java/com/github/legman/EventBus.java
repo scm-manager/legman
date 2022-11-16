@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -116,7 +117,6 @@ public class EventBus {
    * A thread-safe cache for flattenHierarchy(). The Class class is immutable. This cache is not shared between
    * instances in order to avoid class loader leaks, in environments where classes will be load dynamically.
    */
-  @SuppressWarnings("UnstableApiUsage")
   private final LoadingCache<Class<?>, Set<Class<?>>> flattenHierarchyCache =
       CacheBuilder.newBuilder()
           .weakKeys()
@@ -160,7 +160,7 @@ public class EventBus {
   private final String identifier;
 
   /** executor for handling asynchronous events */
-  private final OrderedExecutor executor;
+  private final ExecutorSerializer executor;
 
   /** list of invocation interceptors **/
   private final List<InvocationInterceptor> invocationInterceptors;
@@ -193,7 +193,7 @@ public class EventBus {
 
   private EventBus(Builder builder) {
     this.identifier = builder.identifier;
-    this.executor = new OrderedExecutor(createExecutor(builder));
+    this.executor = new ExecutorSerializer(createExecutor(builder));
     this.invocationInterceptors = Collections.unmodifiableList(builder.invocationInterceptors);
     this.finder = new AnnotatedHandlerFinder();
   }
@@ -440,7 +440,17 @@ public class EventBus {
     if ( wrapper.isAsync() ){
       executor.dispatchAsynchronous(event, wrapper);
     } else {
-      executor.dispatchDirectly(event, wrapper);
+      execute(event, wrapper);
+    }
+  }
+
+  private void execute(Object event, EventHandler wrapper) {
+    try {
+      wrapper.handleEvent(event);
+    } catch (InvocationTargetException e) {
+      Throwable cause = e.getCause();
+      Throwables.propagateIfPossible(cause);
+      throw new EventBusException(event, "could not dispatch event", cause);
     }
   }
 

@@ -1,6 +1,5 @@
 package com.github.legman;
 
-import com.google.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,19 +12,45 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
-class OrderedExecutor {
+/**
+ * This class is used to guard the executor from being blocked by long-running
+ * event handlers. Instead of dispatching more events for such a event handler
+ * which might lead to a completely blocked event bus, this class dispatches only
+ * one event at a time for a specific event handler (despite if the handler is
+ * marked to be concurrent; in this case the events are dispatched as soon as they
+ * arrive). Further events are put into a queue, that is taken into account again
+ * whenever a process finishes.
+ */
+class ExecutorSerializer {
 
-  private static final Logger logger = LoggerFactory.getLogger(OrderedExecutor.class);
+  private static final Logger logger = LoggerFactory.getLogger(ExecutorSerializer.class);
 
+  /**
+   * The underlying java executor to handle the actual processing.
+   */
   private final Executor executor;
 
+  /**
+   * Set of handler, that are awaiting execution or currently are executing an event.
+   * Further events for handler in this collection are queued in {@link #queuedEvents}.
+   */
   private final Set<EventHandler> runningHandlers = new HashSet<>();
-  private final Queue<EventBus.EventWithHandler> queuedHandlers = new LinkedList<>();
+  /**
+   * Queue of handlers and events that could not have been processed right away, because
+   * the handler already is 'busy' with another event.
+   */
+  private final Queue<EventBus.EventWithHandler> queuedEvents = new LinkedList<>();
 
-  OrderedExecutor(Executor executor) {
+  ExecutorSerializer(Executor executor) {
     this.executor = executor;
   }
 
+  /**
+   * This takes an event and a handler to dispatch it using the {@link #executor}. If the
+   * handler has to be synchronized (aka is marked as non-concurrent, {@link EventHandler#hasToBeSynchronized()}),
+   * this is done in the following process, otherwise it is 'put into' the {@link #executor}
+   * right away.
+   */
   void dispatchAsynchronous(final Object event, final EventHandler wrapper) {
     if (wrapper.hasToBeSynchronized()) {
       executeSynchronized(event, wrapper);
@@ -35,25 +60,19 @@ class OrderedExecutor {
     }
   }
 
-  void dispatchDirectly(Object event, EventHandler wrapper) {
+  private void dispatchDirectly(Object event, EventHandler wrapper) {
     try {
       wrapper.handleEvent(event);
     } catch (InvocationTargetException e) {
-      if (wrapper.isAsync()) {
-        logger.error("could not dispatch event: {} to handler {}", event, wrapper, e);
-      } else {
-        Throwable cause = e.getCause();
-        Throwables.propagateIfPossible(cause);
-        throw new EventBusException(event, "could not dispatch event", cause);
-      }
+      logger.error("could not dispatch event: {} to handler {}", event, wrapper, e);
     }
   }
 
   private void executeSynchronized(final Object event, final EventHandler wrapper) {
     synchronized (this) {
       if (runningHandlers.contains(wrapper)) {
-        logger.debug("postponing execution of handler {}; there are already {} other handlers waiting", wrapper, queuedHandlers.size());
-        queuedHandlers.add(new EventBus.EventWithHandler(event, wrapper));
+        logger.debug("postponing execution of handler {}; there are already {} other handlers waiting", wrapper, queuedEvents.size());
+        queuedEvents.add(new EventBus.EventWithHandler(event, wrapper));
       } else {
         runningHandlers.add(wrapper);
         executor.execute(() -> {
@@ -71,8 +90,8 @@ class OrderedExecutor {
   }
 
   private void triggerWaitingHandlers(EventHandler wrapper) {
-    logger.debug("checking {} waiting handlers for possible execution", queuedHandlers.size());
-    for (Iterator<EventBus.EventWithHandler> iterator = queuedHandlers.iterator(); iterator.hasNext(); ) {
+    logger.debug("checking {} waiting handlers for possible execution", queuedEvents.size());
+    for (Iterator<EventBus.EventWithHandler> iterator = queuedEvents.iterator(); iterator.hasNext(); ) {
       EventBus.EventWithHandler queuedHandler = iterator.next();
       if (runningHandlers.contains(queuedHandler.handler)) {
         logger.debug("execution of handler still waiting, because other call is still running: {}", wrapper);
@@ -85,10 +104,14 @@ class OrderedExecutor {
     }
   }
 
+  /**
+   * Triggers the shutdown of the {@link #executor} as soon as all events wating inside
+   * {@link #queuedEvents} are executed.
+   */
   void shutdown() {
     executor.execute(() -> {
       synchronized (this) {
-        if (queuedHandlers.isEmpty()) {
+        if (queuedEvents.isEmpty()) {
           logger.debug("no more handlers queued; shutting down executors");
           if (executor instanceof ExecutorService) {
             ((ExecutorService) executor).shutdown();
