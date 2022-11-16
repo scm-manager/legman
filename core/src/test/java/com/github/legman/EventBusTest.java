@@ -198,14 +198,26 @@ class EventBusTest {
     QuickListener quickListener = new QuickListener();
     bus.register(quickListener);
 
-    bus.post("event");
-    bus.post("event");
-    bus.post("event");
-    bus.post("event");
-    bus.post("event");
+    IntStream.range(0, 5).forEach(i -> bus.post("event-" + i));
 
     quickListener.awaitCountDown();
     assertThat(longRunningListener.currentCount()).isZero();
+    longRunningListener.finish();
+  }
+
+  @Test
+  void shouldNotSkipEventsAfterShutdown() {
+    EventBus bus = new EventBus();
+    LongRunningListener longRunningListener = new LongRunningListener();
+    bus.register(longRunningListener);
+
+    IntStream.range(0, 5).forEach(i -> bus.post("event-" + i));
+
+    bus.shutdown();
+
+    longRunningListener.finish();
+
+    await().atMost(1, SECONDS).untilAsserted(() -> assertThat(longRunningListener.currentCount()).isEqualTo(5));
   }
 
   @Test
@@ -359,12 +371,13 @@ class EventBusTest {
 
   private static class LongRunningListener {
 
-    private AtomicInteger readyCount = new AtomicInteger(0);
+    private final AtomicInteger readyCount = new AtomicInteger(0);
+    private final CountDownLatch latch = new CountDownLatch(1);
 
     @Subscribe
     public void handleEvent(String event) {
       try {
-        Thread.sleep(1000);
+        latch.await();
         readyCount.incrementAndGet();
       } catch (InterruptedException e) {
         throw new RuntimeException(e);
@@ -373,6 +386,10 @@ class EventBusTest {
 
     int currentCount() {
       return readyCount.get();
+    }
+
+    public void finish() {
+      latch.countDown();
     }
   }
 
