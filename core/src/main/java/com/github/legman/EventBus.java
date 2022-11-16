@@ -387,8 +387,6 @@ public class EventBus {
     }
   }
 
-
-
   /**
    * Dispatch {@code events} in the order they were posted, regardless of
    * the posting thread.
@@ -455,10 +453,7 @@ public class EventBus {
       wrapper.handleEvent(event);
     } catch (InvocationTargetException e) {
       if ( wrapper.isAsync() ){
-        StringBuilder msg = new StringBuilder(identifier);
-        msg.append(" - could not dispatch event: ").append(event);
-        msg.append(" to handler ").append(wrapper);
-        logger.error(msg.toString(), e);
+        logger.error("{} - could not dispatch event: {} to handler {}", identifier, event, wrapper, e);
       } else {
         Throwable cause = e.getCause();
         Throwables.propagateIfPossible(cause);
@@ -610,7 +605,7 @@ public class EventBus {
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
 
     private final Set<EventHandler> runningHandlers = new HashSet<>();
-    private final Queue<HandlerWithEvent> queuedHandlers = new LinkedList<>();
+    private final Queue<EventWithHandler> queuedHandlers = new LinkedList<>();
 
     private OrderedExecutor(Executor delegate) {
       this.delegate = delegate;
@@ -630,7 +625,7 @@ public class EventBus {
         synchronized (runningHandlers) {
           if (runningHandlers.contains(wrapper)) {
             logger.debug("postponing execution of handler {}; there are already {} other handlers waiting", wrapper, queuedHandlers.size());
-            queuedHandlers.add(new HandlerWithEvent(event, wrapper));
+            queuedHandlers.add(new EventWithHandler(event, wrapper));
           } else {
             runningHandlers.add(wrapper);
             delegate.execute(() -> {
@@ -650,14 +645,14 @@ public class EventBus {
 
     private void triggerWaitingHandlers(EventHandler wrapper) {
       logger.debug("checking {} waiting handlers for possible execution", queuedHandlers.size());
-      for (Iterator<HandlerWithEvent> iterator = queuedHandlers.iterator(); iterator.hasNext(); ) {
-        HandlerWithEvent queuedHandler = iterator.next();
-        if (runningHandlers.contains(queuedHandler.getHandler())) {
           logger.debug("execution of handler still waiting, because other call is still running: {}", wrapper);
+      for (Iterator<EventWithHandler> iterator = queuedHandlers.iterator(); iterator.hasNext(); ) {
+        EventWithHandler queuedHandler = iterator.next();
+        if (runningHandlers.contains(queuedHandler.handler)) {
         } else {
           logger.debug("executing postponed handler because it is no longer blocked: {}", wrapper);
           iterator.remove();
-          executeAsync(queuedHandler.getEvent(), queuedHandler.getHandler());
+          executeSynchronized(queuedHandler.event, queuedHandler.handler);
           break;
         }
       }
@@ -667,24 +662,6 @@ public class EventBus {
       if (delegate instanceof ExecutorService) {
         ((ExecutorService) delegate).shutdown();
       }
-    }
-  }
-
-  private final class HandlerWithEvent {
-    private final Object event;
-    private final EventHandler handler;
-
-    public HandlerWithEvent(Object event, EventHandler handler) {
-      this.event = event;
-      this.handler = handler;
-    }
-
-    public Object getEvent() {
-      return event;
-    }
-
-    public EventHandler getHandler() {
-      return handler;
     }
   }
 }
