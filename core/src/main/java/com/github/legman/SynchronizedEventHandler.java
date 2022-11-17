@@ -46,10 +46,7 @@ final class SynchronizedEventHandler extends EventHandler {
   }
 
   @Override
-  public void handleEvent(Object event) throws InvocationTargetException {
-    // https://code.google.com/p/guava-libraries/issues/detail?id=1403
-    synchronized (this) {
-      super.handleEvent(event);
-    }
+  boolean hasToBeSynchronized() {
+    return true;
   }
 }

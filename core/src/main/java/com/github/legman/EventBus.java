@@ -117,7 +117,6 @@ public class EventBus {
    * A thread-safe cache for flattenHierarchy(). The Class class is immutable. This cache is not shared between
    * instances in order to avoid class loader leaks, in environments where classes will be load dynamically.
    */
-  @SuppressWarnings("UnstableApiUsage")
   private final LoadingCache<Class<?>, Set<Class<?>>> flattenHierarchyCache =
       CacheBuilder.newBuilder()
           .weakKeys()
@@ -161,7 +160,7 @@ public class EventBus {
   private final String identifier;
 
   /** executor for handling asynchronous events */
-  private final Executor executor;
+  private final ExecutorSerializer executor;
 
   /** list of invocation interceptors **/
   private final List<InvocationInterceptor> invocationInterceptors;
@@ -194,7 +193,7 @@ public class EventBus {
 
   private EventBus(Builder builder) {
     this.identifier = builder.identifier;
-    this.executor = createExecutor(builder);
+    this.executor = new ExecutorSerializer(createExecutor(builder));
     this.invocationInterceptors = Collections.unmodifiableList(builder.invocationInterceptors);
     this.finder = new AnnotatedHandlerFinder();
   }
@@ -384,8 +383,6 @@ public class EventBus {
     }
   }
 
-
-
   /**
    * Dispatch {@code events} in the order they were posted, regardless of
    * the posting thread.
@@ -441,26 +438,19 @@ public class EventBus {
     }
 
     if ( wrapper.isAsync() ){
-      executor.execute(() -> dispatchSynchronous(event, wrapper));
+      executor.dispatchAsynchronous(event, wrapper);
     } else {
-      dispatchSynchronous(event, wrapper);
+      execute(event, wrapper);
     }
   }
 
-  void dispatchSynchronous(Object event, EventHandler wrapper){
+  private void execute(Object event, EventHandler wrapper) {
     try {
       wrapper.handleEvent(event);
     } catch (InvocationTargetException e) {
-      if ( wrapper.isAsync() ){
-        StringBuilder msg = new StringBuilder(identifier);
-        msg.append(" - could not dispatch event: ").append(event);
-        msg.append(" to handler ").append(wrapper);
-        logger.error(msg.toString(), e);
-      } else {
-        Throwable cause = e.getCause();
-        Throwables.propagateIfPossible(cause);
-        throw new EventBusException(event, "could not dispatch event", cause);
-      }
+      Throwable cause = e.getCause();
+      Throwables.propagateIfPossible(cause);
+      throw new EventBusException(event, "could not dispatch event", cause);
     }
   }
 
@@ -488,9 +478,7 @@ public class EventBus {
    */
   public void shutdown() {
     shutdown.set(true);
-    if (executor instanceof ExecutorService) {
-      ((ExecutorService) executor).shutdown();
-    }
+    executor.shutdown();
   }
 
   /**
@@ -602,4 +590,5 @@ public class EventBus {
       return new EventBus(this);
     }
   }
+
 }
