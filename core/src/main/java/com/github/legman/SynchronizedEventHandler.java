@@ -16,7 +16,6 @@
 
 package com.github.legman;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**

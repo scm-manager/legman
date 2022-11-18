@@ -68,28 +68,24 @@ class ExecutorSerializer {
     }
   }
 
-  private void executeSynchronized(final Object event, final EventHandler wrapper) {
-    synchronized (this) {
-      if (runningHandlers.contains(wrapper)) {
-        logger.debug("postponing execution of handler {}; there are already {} other handlers waiting", wrapper, queuedEvents.size());
-        queuedEvents.add(new EventBus.EventWithHandler(event, wrapper));
-      } else {
-        runningHandlers.add(wrapper);
-        executor.execute(() -> {
-          try {
-            dispatchDirectly(event, wrapper);
-          } finally {
-            synchronized (this) {
-              runningHandlers.remove(wrapper);
-              triggerWaitingHandlers(wrapper);
-            }
-          }
-        });
-      }
+  private synchronized void executeSynchronized(final Object event, final EventHandler wrapper) {
+    if (runningHandlers.contains(wrapper)) {
+      logger.debug("postponing execution of handler {}; there are already {} other handlers waiting", wrapper, queuedEvents.size());
+      queuedEvents.add(new EventBus.EventWithHandler(event, wrapper));
+    } else {
+      runningHandlers.add(wrapper);
+      executor.execute(() -> {
+        try {
+          dispatchDirectly(event, wrapper);
+        } finally {
+          releaseRunningHandlerAndTriggerWaitingHandlers(wrapper);
+        }
+      });
     }
   }
 
-  private void triggerWaitingHandlers(EventHandler wrapper) {
+  private synchronized void releaseRunningHandlerAndTriggerWaitingHandlers(EventHandler wrapper) {
+    runningHandlers.remove(wrapper);
     logger.debug("checking {} waiting handlers for possible execution", queuedEvents.size());
     for (Iterator<EventBus.EventWithHandler> iterator = queuedEvents.iterator(); iterator.hasNext(); ) {
       EventBus.EventWithHandler queuedHandler = iterator.next();
