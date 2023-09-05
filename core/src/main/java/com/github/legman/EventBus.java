@@ -49,6 +49,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Multimaps.synchronizedSetMultimap;
 
 
 /**
@@ -136,7 +137,7 @@ public class EventBus {
    * made after acquiring a read or write lock via {@link #handlersByTypeLock}.
    */
   @VisibleForTesting
-  final SetMultimap<Class<?>, EventHandler> handlersByType = HashMultimap.create();
+  final SetMultimap<Class<?>, EventHandler> handlersByType = synchronizedSetMultimap(HashMultimap.create());
 
   private final ReadWriteLock handlersByTypeLock = new ReentrantReadWriteLock();
 
