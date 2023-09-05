@@ -6,12 +6,12 @@
   <groupId>com.cloudogu.legman</groupId>
   <artifactId>legman</artifactId>
   <packaging>pom</packaging>
-  <version>2.0.1-SNAPSHOT</version>
+  <version>2.0.2-SNAPSHOT</version>
   <description>
     This project is a fork of the EventBus of Google Guava
   </description>
   <name>legman</name>
-  <url>https://github.com/sdorra/legman</url>
+  <url>https://github.com/scm-manager/legman</url>
 
   <licenses>
     <license>
@@ -22,29 +22,24 @@
 
   <developers>
     <developer>
-      <id>sdorra</id>
-      <name>Sebastian Sdorra</name>
-      <email>s.sdorra@gmail.com</email>
+      <id>cloudogu</id>
+      <name>Cloudogu GmbH</name>
+      <email>info@cloudogu.com</email>
       <timezone>Europe/Berlin</timezone>
     </developer>
   </developers>
 
   <scm>
-    <connection>scm:git:https://github.com/sdorra/legman.git</connection>
-    <developerConnection>scm:git:https://github.com/sdorra/legman.git</developerConnection>
-    <url>https://github.com/sdorra/legman</url>
+    <connection>scm:git:https://github.com/scm-manager/legman.git</connection>
+    <developerConnection>scm:git:https://github.com/scm-manager/legman.git</developerConnection>
+    <url>https://github.com/scm-manager/legman</url>
     <tag>HEAD</tag>
   </scm>
 
   <issueManagement>
     <system>github</system>
-    <url>https://github.com/sdorra/legman/issues</url>
+    <url>https://github.com/scm-manager/legman/issues</url>
   </issueManagement>
-
-  <ciManagement>
-    <system>Jenkins</system>
-    <url>https://scm-manager.ci.cloudbees.com/</url>
-  </ciManagement>
 
   <prerequisites>
     <maven>3.0.0</maven>
