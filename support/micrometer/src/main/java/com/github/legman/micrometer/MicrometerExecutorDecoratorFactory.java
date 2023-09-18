@@ -21,6 +21,7 @@ import com.github.legman.ExecutorDecoratorFactory;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.binder.jvm.ExecutorServiceMetrics;
+import org.apache.shiro.concurrent.SubjectAwareExecutorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,26 +35,30 @@ import java.util.concurrent.ExecutorService;
  */
 public class MicrometerExecutorDecoratorFactory implements ExecutorDecoratorFactory {
 
-  private static final Logger LOG = LoggerFactory.getLogger(MicrometerExecutorDecoratorFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MicrometerExecutorDecoratorFactory.class);
 
-  private final MeterRegistry registry;
-  private final Iterable<Tag> tags;
+    private final MeterRegistry registry;
+    private final Iterable<Tag> tags;
 
-  MicrometerExecutorDecoratorFactory(MeterRegistry registry, Iterable<Tag> tags) {
-    this.registry = registry;
-    this.tags = tags;
-  }
-
-  @Override
-  public Executor decorate(Executor executor) {
-    if (executor instanceof ExecutorService) {
-      LOG.trace("collect metrics for executor service");
-      new ExecutorServiceMetrics(
-        (ExecutorService)executor, "legman", tags
-      ).bindTo(registry);
-    } else {
-      LOG.warn("could only collect metrics for instances of ExecutorService and not for {}", executor.getClass());
+    MicrometerExecutorDecoratorFactory(MeterRegistry registry, Iterable<Tag> tags) {
+        this.registry = registry;
+        this.tags = tags;
     }
-    return executor;
-  }
+
+    @Override
+    public Executor decorate(Executor executor) {
+        if (executor instanceof ExecutorService) {
+            LOG.trace("collect metrics for executor service");
+            if (executor instanceof SubjectAwareExecutorService) {
+                new ExecutorServiceMetrics(((SubjectAwareExecutorService) executor).getTargetExecutorService(), "legman", tags
+                ).bindTo(registry);
+            } else {
+                new ExecutorServiceMetrics((ExecutorService) executor, "legman", tags
+                ).bindTo(registry);
+            }
+        } else {
+            LOG.warn("could only collect metrics for instances of ExecutorService and not for {}", executor.getClass());
+        }
+        return executor;
+    }
 }
