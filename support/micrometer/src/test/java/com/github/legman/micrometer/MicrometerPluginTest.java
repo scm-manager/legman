@@ -19,13 +19,20 @@ package com.github.legman.micrometer;
 import com.github.legman.EventBus;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.apache.shiro.concurrent.SubjectAwareExecutorService;
+import org.github.sdorra.jse.ShiroExtension;
+import org.github.sdorra.jse.SubjectAware;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@ExtendWith(ShiroExtension.class)
 class MicrometerPluginTest extends MicrometerTestBase {
 
   @Test
@@ -62,6 +69,22 @@ class MicrometerPluginTest extends MicrometerTestBase {
     SimpleMeterRegistry registry = new SimpleMeterRegistry();
 
     eventBus = EventBus.builder()
+            .withPlugins(new MicrometerPlugin(registry).withInvocationTags(Tag.of("spaceship", "RazorCrest")))
+            .build();
+
+    sendEventAndWait();
+
+    assertThat(registry.get("legman.invocation").timer().getId().getTag("spaceship")).isEqualTo("RazorCrest");
+  }
+
+  @Test
+  @SubjectAware(value = "trillian")
+  void shouldWorkWithSubjectAwareExecutor() {
+    SimpleMeterRegistry registry = new SimpleMeterRegistry();
+    ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+
+    eventBus = EventBus.builder()
+            .withExecutor(new SubjectAwareExecutorService(executorService))
             .withPlugins(new MicrometerPlugin(registry).withInvocationTags(Tag.of("spaceship", "RazorCrest")))
             .build();
 

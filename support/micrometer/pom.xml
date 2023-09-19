@@ -26,7 +26,19 @@
       <artifactId>micrometer-core</artifactId>
       <version>1.6.5</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.shiro</groupId>
+      <artifactId>shiro-core</artifactId>
+      <version>1.7.0</version>
+      <scope>compile</scope>
+    </dependency>
 
+    <dependency>
+      <groupId>com.github.sdorra</groupId>
+      <artifactId>junit-shiro-extension</artifactId>
+      <version>1.0.1</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 </project>
