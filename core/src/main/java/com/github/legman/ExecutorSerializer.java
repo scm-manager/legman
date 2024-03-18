@@ -3,7 +3,6 @@ package com.github.legman;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -51,32 +50,24 @@ class ExecutorSerializer {
    * this is done in the following process, otherwise it is 'put into' the {@link #executor}
    * right away.
    */
-  void dispatchAsynchronous(final Object event, final EventHandler wrapper) {
+  void dispatchAsynchronous(final Runnable runnable, final EventHandler wrapper) {
     if (wrapper.hasToBeSynchronized()) {
-      executeSynchronized(event, wrapper);
+      executeSynchronized(runnable, wrapper);
     } else {
       logger.debug("executing handler concurrently: {}", wrapper);
-      executor.execute(() -> dispatchDirectly(event, wrapper));
+      executor.execute(runnable);
     }
   }
 
-  private void dispatchDirectly(Object event, EventHandler wrapper) {
-    try {
-      wrapper.handleEvent(event);
-    } catch (InvocationTargetException e) {
-      logger.error("could not dispatch event: {} to handler {}", event, wrapper, e);
-    }
-  }
-
-  private synchronized void executeSynchronized(final Object event, final EventHandler wrapper) {
+  private synchronized void executeSynchronized(final Runnable runnable, final EventHandler wrapper) {
     if (runningHandlers.contains(wrapper)) {
       logger.debug("postponing execution of handler {}; there are already {} other handlers waiting", wrapper, queuedEvents.size());
-      queuedEvents.add(new EventBus.EventWithHandler(event, wrapper));
+      queuedEvents.add(new EventBus.EventWithHandler(runnable, wrapper));
     } else {
       runningHandlers.add(wrapper);
       executor.execute(() -> {
         try {
-          dispatchDirectly(event, wrapper);
+          runnable.run();
         } finally {
           releaseRunningHandlerAndTriggerWaitingHandlers(wrapper);
         }
@@ -94,7 +85,7 @@ class ExecutorSerializer {
       } else {
         logger.debug("executing postponed handler because it is no longer blocked: {}", wrapper);
         iterator.remove();
-        executeSynchronized(queuedHandler.event, queuedHandler.handler);
+        executeSynchronized(queuedHandler.runnable, queuedHandler.handler);
         break;
       }
     }
