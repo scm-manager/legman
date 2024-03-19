@@ -27,7 +27,6 @@ import com.github.legman.Plugin;
 public class ShiroPlugin implements Plugin {
   @Override
   public void apply(EventBus.Builder builder) {
-    builder.withExecutorDecoratorFactories(new ShiroExecutorDecoratorFactory());
     builder.withEventDecorators(new ShiroEventDecorator());
   }
 }

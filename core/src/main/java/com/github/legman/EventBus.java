@@ -313,7 +313,7 @@ public class EventBus {
    *
    * @param event  event to post.
    */
-  public synchronized void post(Object event) {
+  public void post(Object event) {
     if (shutdown.get()) {
       logger.warn("eventbus is already shutdown, we could not process event {}", event);
       return;
