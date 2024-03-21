@@ -118,7 +118,6 @@ public class EventBus {
    * A thread-safe cache for flattenHierarchy(). The Class class is immutable. This cache is not shared between
    * instances in order to avoid class loader leaks, in environments where classes will be load dynamically.
    */
-  @SuppressWarnings("UnstableApiUsage")
   private final LoadingCache<Class<?>, Set<Class<?>>> flattenHierarchyCache =
       CacheBuilder.newBuilder()
           .weakKeys()
@@ -162,7 +161,7 @@ public class EventBus {
   private final String identifier;
 
   /** executor for handling asynchronous events */
-  private final Executor executor;
+  private final ExecutorSerializer executor;
 
   /** list of invocation interceptors **/
   private final List<InvocationInterceptor> invocationInterceptors;
@@ -170,6 +169,8 @@ public class EventBus {
   /** the queue of asynchronous events is shared across all threads */
   private final ConcurrentLinkedQueue<EventWithHandler> asyncEventsToDispatch =
           new ConcurrentLinkedQueue<>();
+
+  private final EventDecorator eventDecorator;
 
   /** name of the default event bus */
   static final String DEFAULT_NAME = "default";
@@ -195,9 +196,10 @@ public class EventBus {
 
   private EventBus(Builder builder) {
     this.identifier = builder.identifier;
-    this.executor = createExecutor(builder);
+    this.executor = new ExecutorSerializer(createExecutor(builder));
     this.invocationInterceptors = Collections.unmodifiableList(builder.invocationInterceptors);
     this.finder = new AnnotatedHandlerFinder();
+    this.eventDecorator = createEventDecorator(builder);
   }
 
   private static Executor createExecutor(Builder builder) {
@@ -209,6 +211,15 @@ public class EventBus {
       executor = executorDecoratorFactory.decorate(executor);
     }
     return executor;
+  }
+
+  private static EventDecorator createEventDecorator(Builder builder) {
+    return runnable -> {
+      for (EventDecorator decorator : builder.eventDecorators) {
+        runnable = decorator.decorate(runnable);
+      }
+      return runnable;
+    };
   }
 
   /**
@@ -378,14 +389,29 @@ public class EventBus {
    * Events are queued in-order of occurrence so they can be dispatched in the same order.
    */
   void enqueueEvent(Object event, EventHandler handler) {
+    Runnable runnable = eventDecorator.decorate(new Runnable() {
+      @Override
+      public void run() {
+        try {
+          handler.handleEvent(event);
+        } catch (InvocationTargetException e) {
+          Throwable cause = e.getCause();
+          Throwables.propagateIfPossible(cause);
+          throw new EventBusException(event, "could not dispatch event", cause);
+        }
+      }
+
+      @Override
+      public String toString() {
+        return event.toString();
+      }
+    });
     if ( handler.isAsync() ){
-      asyncEventsToDispatch.offer(new EventWithHandler(event, handler));
+      asyncEventsToDispatch.offer(new EventWithHandler(runnable, handler));
     } else {
-      eventsToDispatch.get().offer(new EventWithHandler(event, handler));
+      eventsToDispatch.get().offer(new EventWithHandler(runnable, handler));
     }
   }
-
-
 
   /**
    * Dispatch {@code events} in the order they were posted, regardless of
@@ -398,7 +424,7 @@ public class EventBus {
         break;
       }
 
-      dispatch(eventWithHandler.event, eventWithHandler.handler);
+      dispatch(eventWithHandler.runnable, eventWithHandler.handler);
     }
   }
 
@@ -419,7 +445,7 @@ public class EventBus {
       Queue<EventWithHandler> events = eventsToDispatch.get();
       EventWithHandler eventWithHandler;
       while ((eventWithHandler = events.poll()) != null) {
-        dispatch(eventWithHandler.event, eventWithHandler.handler);
+        dispatch(eventWithHandler.runnable, eventWithHandler.handler);
       }
     } finally {
       isDispatching.remove();
@@ -432,36 +458,19 @@ public class EventBus {
    * is an appropriate override point for subclasses that wish to make
    * event delivery asynchronous.
    *
-   * @param event  event to dispatch.
+   * @param runnable event to dispatch.
    * @param wrapper  wrapper that will call the handler.
    */
-  void dispatch(final Object event, final EventHandler wrapper) {
+  void dispatch(final Runnable runnable, final EventHandler wrapper) {
     if (shutdown.get()) {
-      logger.warn("eventbus is already shutdown, we could not process event {}", event);
+      logger.warn("eventbus is already shutdown, we could not process event {}", runnable);
       return;
     }
 
     if ( wrapper.isAsync() ){
-      executor.execute(() -> dispatchSynchronous(event, wrapper));
+      executor.dispatchAsynchronous(runnable, wrapper);
     } else {
-      dispatchSynchronous(event, wrapper);
-    }
-  }
-
-  void dispatchSynchronous(Object event, EventHandler wrapper){
-    try {
-      wrapper.handleEvent(event);
-    } catch (InvocationTargetException e) {
-      if ( wrapper.isAsync() ){
-        StringBuilder msg = new StringBuilder(identifier);
-        msg.append(" - could not dispatch event: ").append(event);
-        msg.append(" to handler ").append(wrapper);
-        logger.error(msg.toString(), e);
-      } else {
-        Throwable cause = e.getCause();
-        Throwables.propagateIfPossible(cause);
-        throw new EventBusException(event, "could not dispatch event", cause);
-      }
+      runnable.run();
     }
   }
 
@@ -489,9 +498,7 @@ public class EventBus {
    */
   public void shutdown() {
     shutdown.set(true);
-    if (executor instanceof ExecutorService) {
-      ((ExecutorService) executor).shutdown();
-    }
+    executor.shutdown();
   }
 
   /**
@@ -505,10 +512,10 @@ public class EventBus {
 
   /** simple struct representing an event and it's handler */
   static class EventWithHandler {
-    final Object event;
+    final Runnable runnable;
     final EventHandler handler;
-    public EventWithHandler(Object event, EventHandler handler) {
-      this.event = checkNotNull(event);
+    public EventWithHandler(Runnable runnable, EventHandler handler) {
+      this.runnable = checkNotNull(runnable);
       this.handler = checkNotNull(handler);
     }
   }
@@ -533,6 +540,7 @@ public class EventBus {
     private Executor executor;
     private final List<ExecutorDecoratorFactory> executorDecoratorFactories = new ArrayList<>();
     private final List<InvocationInterceptor> invocationInterceptors = new ArrayList<>();
+    private final List<EventDecorator> eventDecorators = new ArrayList<>();
 
     private Builder() {
     }
@@ -570,6 +578,11 @@ public class EventBus {
       return this;
     }
 
+    public Builder withEventDecorators(EventDecorator... eventDecorators) {
+      this.eventDecorators.addAll(Arrays.asList(eventDecorators));
+      return this;
+    }
+
     /**
      * Intercept subscriber invocations.
      *
@@ -603,4 +616,5 @@ public class EventBus {
       return new EventBus(this);
     }
   }
+
 }
